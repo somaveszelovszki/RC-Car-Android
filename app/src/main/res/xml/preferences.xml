@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.v7.preference.PreferenceScreen
+	xmlns:android="http://schemas.android.com/apk/res/android">
+
+	<android.support.v7.preference.ListPreference
+		android:key="@string/pref_control_type"
+		android:title="@string/control_type"
+		android:dialogTitle="@string/select_control_type" />
+
+	<android.support.v7.preference.SwitchPreferenceCompat
+		android:key="test"
+		android:title="Switch"/>
+
+</android.support.v7.preference.PreferenceScreen>

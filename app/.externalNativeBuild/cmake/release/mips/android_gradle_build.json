@@ -1,0 +1,28 @@
+
+{
+	"buildFiles" : [ "D:/Dropbox/AndroidStudioProjects/RCCar/app/CMakeLists.txt" ],
+	"cleanCommands" : 
+	[
+		"C:\\Users\\Soma\\AppData\\Local\\Android\\Sdk\\cmake\\3.6.3155560\\bin\\cmake.exe --build D:\\Dropbox\\AndroidStudioProjects\\RCCar\\app\\.externalNativeBuild\\cmake\\release\\mips --target clean"
+	],
+	"libraries" : 
+	{
+		"native-lib-Release-mips" : 
+		{
+			"abi" : "mips",
+			"artifactName" : "native-lib",
+			"buildCommand" : "C:\\Users\\Soma\\AppData\\Local\\Android\\Sdk\\cmake\\3.6.3155560\\bin\\cmake.exe --build D:\\Dropbox\\AndroidStudioProjects\\RCCar\\app\\.externalNativeBuild\\cmake\\release\\mips --target native-lib",
+			"buildType" : "release",
+			"output" : "D:/Dropbox/AndroidStudioProjects/RCCar/app/build/intermediates/cmake/release/obj/mips/libnative-lib.so",
+			"toolchain" : "3748502053"
+		}
+	},
+	"toolchains" : 
+	{
+		"3748502053" : 
+		{
+			"cCompilerExecutable" : "C:/Users/Soma/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/bin/clang.exe",
+			"cppCompilerExecutable" : "C:/Users/Soma/AppData/Local/Android/Sdk/ndk-bundle/toolchains/llvm/prebuilt/windows-x86_64/bin/clang++.exe"
+		}
+	}
+}

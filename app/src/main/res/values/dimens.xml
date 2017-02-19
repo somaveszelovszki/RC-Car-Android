@@ -1,0 +1,7 @@
+<resources>
+    <!-- Default screen margins, per the Android Design guidelines. -->
+    <dimen name="activity_horizontal_margin">16dp</dimen>
+    <dimen name="activity_vertical_margin">16dp</dimen>
+    <dimen name="accelerator_max_height">20dip</dimen>
+    <dimen name="accelerator_min_height">@dimen/accelerator_max_height</dimen>
+</resources>

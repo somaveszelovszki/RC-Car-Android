@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">RC Car</string>
+    <string name="search_devices">Search devices</string>
+    <string name="turn_bluetooth_on">Turn Bluetooth on to find your RC Car.</string>
+    <string name="empty_list">Empty list</string>
+    <string name="connected_to_device">Connected to device.</string>
+    <string name="error">An error has occurred.</string>
+    <string name="recalibrate_steering">Recalibrate steering</string>
+    <string name="set_steering_position_as_middle">Set position as middle</string>
+    <string name="settings">Settings</string>
+    <string name="my_profile">My profile</string>
+
+    <string name="pref_control_type">pref_control_type</string>
+    <string name="control_type">Control type</string>
+    <string name="select_control_type">Select control type</string>
+
+</resources>

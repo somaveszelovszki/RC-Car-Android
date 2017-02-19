@@ -1,0 +1,74 @@
+package veszelovszki.soma.rc_car;
+
+import android.os.Bundle;
+import android.support.v4.app.FragmentManager;
+import android.support.v7.app.ActionBar;
+import android.view.Menu;
+import android.view.MenuItem;
+
+import veszelovszki.soma.rc_car.fragment.SettingsFragment;
+import veszelovszki.soma.rc_car.utils.PrefManager;
+import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
+
+public class SettingsActivity extends PreferenceAdaptActivity{
+
+    private SettingsFragment mSettingsFragment;
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        setContentView(R.layout.activity_settings);
+
+        // adds article fragment to view
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        mSettingsFragment = SettingsFragment.newInstance();
+        fragmentManager.beginTransaction()
+                .replace(R.id.fragment_container, mSettingsFragment, SettingsFragment.TAG).commit();
+
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
+            actionBar.setTitle(R.string.settings);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+
+            default:
+                // If we got here, the user's action was not recognized.
+                // Invoke the superclass to handle it.
+                return super.onOptionsItemSelected(item);
+
+        }
+    }
+
+    /**
+     * Checks for permissions - called during onCreate().
+     */
+    protected void checkPermissions() {
+
+    }
+
+    /**
+     * Method is called when activity runs for the first time.
+     */
+    public void onFirstRun() {
+
+    }
+
+    public PrefManager.PREFERENCE getFirstRunPreference() {
+        return PrefManager.PREFERENCE.FIRST_START_SETTINGS;
+    }
+}
