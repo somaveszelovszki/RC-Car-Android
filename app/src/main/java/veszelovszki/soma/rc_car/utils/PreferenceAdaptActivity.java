@@ -89,19 +89,22 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity
         super.setContentView(layoutResID);
 
         // initializes navigation drawer
+        if (isDrawerEnabled) {
+                mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+                mDrawerListView = (ListView) mDrawerLayout.findViewById(android.R.id.list);
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerListView = (ListView) mDrawerLayout.findViewById(android.R.id.list);
+                mDrawerListView.setAdapter(new NavigationDrawerListAdapter(this));
+                mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                        @Override
+                        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                                NavigationDrawerListItem item = (NavigationDrawerListItem) mDrawerListView.getAdapter().getItem(position);
 
-        mDrawerListView.setAdapter(new NavigationDrawerListAdapter(this));
-        mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                NavigationDrawerListItem item = (NavigationDrawerListItem) mDrawerListView.getAdapter().getItem(position);
+                                onDrawerItemClick(item);
+                        }
+                });
+        }
 
-                onDrawerItemClick(item);
-            }
-        });
+        
     }
 
     /**
