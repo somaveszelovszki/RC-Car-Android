@@ -1,6 +1,5 @@
 package veszelovszki.soma.rc_car.utils;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -36,8 +35,9 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
     protected ListView mNavigationDrawerListView = null;
 
     protected PrefManager mPrefManager;
+    //protected DatabaseManager mDbManager;
 
-    protected static Long APP_LANGUAGE_ID;
+    protected String TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,6 +59,7 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
+
 
             default:
                 // If we got here, the user's action was not recognized.
@@ -145,7 +146,61 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
 
     public abstract PrefManager.PREFERENCE getFirstRunPreference();
 
+    /**
+     * Handles preference event.
+     * @param event preference event
+     */
+    public void onPreferenceEvent(ActivityManager.PREF_EVENT event) {
+        switch (event) {
+            case LANGUAGE_CHANGED:
+                // if language changed, sets default locale
+                // and recreates activity
+                this.setLocaleFromPrefs();
+                this.recreate();
 
+                break;
+            default:
+                // do nothing with other events
+        }
+    }
+
+    /**
+     * Sets locale from preferences.
+     */
+    protected void setLocaleFromPrefs() {
+
+        // gets app language iso code from preferences and sets it as locale
+        setLocale(getAppLanguageIsoCodeFromPrefs());
+    }
+
+    /**
+     * Gets app language from preferences - returns default value if preference is not present.
+     * @return language iso code
+     */
+    public String getAppLanguageIsoCodeFromPrefs() {
+        return (String)mPrefManager.readPref(PrefManager.PREFERENCE.APP_LANGUAGE);
+    }
+
+    /**
+     * Sets locale.
+     * @param iso639_1_Code language iso-639-1 code
+     */
+    protected void setLocale(String iso639_1_Code) {
+        Locale locale = new Locale(iso639_1_Code);
+        Locale.setDefault(locale);
+        Configuration config = new Configuration();
+        config.locale = locale;
+        getBaseContext().getResources().updateConfiguration(config,
+                getBaseContext().getResources().getDisplayMetrics());
+    }
+
+    @Override
+    protected void onDestroy(){
+
+        ActivityManager.getInstance().remove(this);
+
+        super.onDestroy();
+    }
 
     protected View getContentView() {
         return findViewById(android.R.id.content);
