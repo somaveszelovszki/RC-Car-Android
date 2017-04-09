@@ -6,7 +6,9 @@ import android.support.v4.content.res.ResourcesCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 
 import veszelovszki.soma.rc_car.R;
@@ -49,8 +51,7 @@ public class AccelerationSeekBar extends VerticalSeekBar
         this.setProgressDrawable(ResourcesCompat.getDrawable(getResources(),
                 R.drawable.accelerator_seekbar_progress, null));
 
-        this.setMinimumHeight(HEIGHT);
-        this.setLayoutParams(new LinearLayout.LayoutParams(this.getWidth(), HEIGHT));
+        //this.setLayoutParams(new LinearLayout.LayoutParams(this.getWidth(), HEIGHT));
 
         this.setOnSeekBarChangeListener(this);
     }

@@ -1,11 +1,14 @@
 package veszelovszki.soma.rc_car.utils;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -16,7 +19,6 @@ import android.widget.ListView;
 import java.util.Locale;
 
 import veszelovszki.soma.rc_car.R;
-import veszelovszki.soma.rc_car.manager.ActivityManager;
 import veszelovszki.soma.rc_car.adapter.NavigationDrawerListAdapter;
 
 /**
@@ -26,34 +28,22 @@ import veszelovszki.soma.rc_car.adapter.NavigationDrawerListAdapter;
  *
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016.07.21.
  */
-public abstract class PreferenceAdaptActivity extends AppCompatActivity
-        implements ActivityManager.PreferenceEventListener {
+public abstract class PreferenceAdaptActivity extends AppCompatActivity {
 
-    protected Boolean isDrawerEnabled = false;
-    protected Boolean twoPaneMode;
+    private Boolean mIsNavigationDrawerEnabled = false;
 
-    protected DrawerLayout mDrawerLayout = null;
-    protected ListView mDrawerListView = null;
+    protected DrawerLayout mNavigationDrawerLayout = null;
+    protected ListView mNavigationDrawerListView = null;
 
     protected PrefManager mPrefManager;
-    //protected DatabaseManager mDbManager;
 
-    protected String TAG;
+    protected static Long APP_LANGUAGE_ID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        TAG = this.getClass().getCanonicalName();
-
-        ActivityManager.getInstance().add(this);
-
         mPrefManager = new PrefManager(this);
-        //mDbManager = new DatabaseManager(this);
-
-        this.checkForFirstRun();
-
-        this.setLocaleFromPrefs();
 
         this.checkPermissions();
     }
@@ -63,18 +53,12 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity
 
         MenuInflater inflater = getMenuInflater();
 
-        // inflates default menu
-        //inflater.inflate(R.menu.menu_item_start_smart_map, menu);
-        //inflater.inflate(R.menu.menu_item_help, menu);
-        //inflater.inflate(R.menu.menu_item_settings, menu);
-
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-
 
             default:
                 // If we got here, the user's action was not recognized.
@@ -88,29 +72,48 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity
     public void setContentView(@LayoutRes int layoutResID) {
         super.setContentView(layoutResID);
 
-        // initializes navigation drawer
+        // initializes navigation navigation_drawer
+        if (mIsNavigationDrawerEnabled) {
+            mNavigationDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+            mNavigationDrawerListView = (ListView) mNavigationDrawerLayout.findViewById(android.R.id.list);
 
-        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-        mDrawerListView = (ListView) mDrawerLayout.findViewById(android.R.id.list);
+            mNavigationDrawerListView.setAdapter(new NavigationDrawerListAdapter(this));
+            mNavigationDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    NavigationDrawerListItem item = (NavigationDrawerListItem) mNavigationDrawerListView.getAdapter().getItem(position);
 
-        mDrawerListView.setAdapter(new NavigationDrawerListAdapter(this));
-        mDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                NavigationDrawerListItem item = (NavigationDrawerListItem) mDrawerListView.getAdapter().getItem(position);
+                    onDrawerItemClick(item);
+                }
+            });
+        }
 
-                onDrawerItemClick(item);
-            }
-        });
+        this.checkForFirstRun();
+
+    }
+
+    public void setNavigationDrawerEnabled(Boolean isNavigationDrawerEnabled) {
+        mIsNavigationDrawerEnabled = isNavigationDrawerEnabled;
+    }
+
+    public Boolean isNavigationDrawerEnabled() {
+        return mIsNavigationDrawerEnabled;
     }
 
     /**
-     * Handles navigation drawer item click.
+     * Handles navigation navigation_drawer item click.
      * @param item
      */
     public void onDrawerItemClick(NavigationDrawerListItem item) {
-        Utils.startActivity(this, item.getCallbackClass());
+        item.getCallback().onEvent();
     }
+
+    public void closeDrawer() {
+        if (isNavigationDrawerEnabled())
+            mNavigationDrawerLayout.closeDrawer(Gravity.LEFT);
+    }
+
+    protected void handleIntent(Intent intent){}
 
     /**
      * Checks if activity is running for the first time, and - if yes - calls method onFirstRun().
@@ -142,72 +145,55 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity
 
     public abstract PrefManager.PREFERENCE getFirstRunPreference();
 
-    /**
-     * Handles preference event.
-     * @param event preference event
-     */
-    public void onPreferenceEvent(ActivityManager.PREF_EVENT event) {
-        switch (event) {
-            case LANGUAGE_CHANGED:
-                // if language changed, sets default locale
-                // and recreates activity
-                this.setLocaleFromPrefs();
-                this.recreate();
 
-                break;
-            default:
-                // do nothing with other events
-        }
-    }
-
-    /**
-     * Sets locale from preferences.
-     */
-    protected void setLocaleFromPrefs() {
-
-        // gets app language iso code from preferences and sets it as locale
-        setLocale(getAppLanguageIsoCodeFromPrefs());
-    }
-
-    /**
-     * Gets app language from preferences - returns default value if preference is not present.
-     * @return language iso code
-     */
-    public String getAppLanguageIsoCodeFromPrefs() {
-        return (String)mPrefManager.readPref(PrefManager.PREFERENCE.APP_LANGUAGE);
-    }
-
-    /**
-     * Sets locale.
-     * @param iso639_1_Code language iso-639-1 code
-     */
-    protected void setLocale(String iso639_1_Code) {
-        Locale locale = new Locale(iso639_1_Code);
-        Locale.setDefault(locale);
-        Configuration config = new Configuration();
-        config.locale = locale;
-        getBaseContext().getResources().updateConfiguration(config,
-                getBaseContext().getResources().getDisplayMetrics());
-    }
-
-    @Override
-    protected void onDestroy(){
-
-        ActivityManager.getInstance().remove(this);
-
-        super.onDestroy();
-    }
 
     protected View getContentView() {
         return findViewById(android.R.id.content);
     }
 
-    /*public DatabaseManager getDbManager() {
-        return mDbManager;
-    }*/
+    /**
+     * Starts new activity or (if new activity is the same as current) handles extras.
+     * @param newActivityClass
+     * @param <T>
+     */
+    public <T extends Activity> void startActivity(Class<T> newActivityClass) {
+        startActivity(newActivityClass, null);
+    }
 
-    protected void startActivityAndFinish(Intent intent) {
-        startActivity(intent);
+    public <T extends Activity> void startActivity(Class<T> newActivityClass, Bundle extras) {
+
+        this.closeDrawer();
+
+        Intent intent;
+
+        // if new activity class is the same as the current, recreates activity
+        if (this.getClass().equals(newActivityClass)) {
+
+            if (extras != null) {
+                intent = this.getIntent();
+                if (intent != null) {
+                    if (intent.getExtras() != null)
+                        intent.getExtras().clear();
+
+                    intent.putExtras(extras);
+
+                    this.handleIntent(intent);
+                }
+            }
+
+        } else {
+            intent = new Intent(this, newActivityClass);
+            this.startActivity(intent);
+        }
+    }
+
+    public <T extends Activity> void startActivityAndFinish(Class<T> newActivityClass) {
+        startActivity(newActivityClass);
+        this.finish();
+    }
+
+    public <T extends Activity> void startActivityAndFinish(Class<T> newActivityClass, Bundle extras) {
+        startActivity(newActivityClass, extras);
         this.finish();
     }
 }

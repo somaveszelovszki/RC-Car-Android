@@ -27,7 +27,7 @@ public class DeviceListFragment extends ListFragment {
     public interface DeviceListFragmentListener {
         void searchDevices();
 
-        void deviceSelected(BluetoothDevice device);
+        void onDeviceSelected(BluetoothDevice device);
     }
 
     DeviceListFragmentListener mListener;
@@ -57,7 +57,7 @@ public class DeviceListFragment extends ListFragment {
         getListView().setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int position, long id) {
-                mListener.deviceSelected(getListAdapter().getItem(position));
+                mListener.onDeviceSelected(getListAdapter().getItem(position));
             }
         });
     }

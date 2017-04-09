@@ -18,7 +18,7 @@ import java.util.Set;
 
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.fragment.DeviceListFragment;
-import veszelovszki.soma.rc_car.utils.BluetoothCommunicator;
+import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
 import veszelovszki.soma.rc_car.common.Command;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
@@ -32,14 +32,18 @@ import veszelovszki.soma.rc_car.view.SteeringWheelView;
 public class ControlActivity extends PreferenceAdaptActivity
         implements SteeringWheelControlFragment.ControlFragmentListener, DeviceListFragment.DeviceListFragmentListener {
 
+    public static final String TAG = ControlActivity.class.getCanonicalName();
+
     /**
      * Determines time period of sending data (speed, rotation) to Arduino.
      */
-    private static final Integer DATA_SEND_PERIOD_MILLISECONDS = 50;
+    private static final Integer DATA_SEND_PERIOD_MILLISECONDS = 100;
 
-    BluetoothCommunicator mBluetoothCommunicator;
-    SteeringWheelControlFragment mControlFragment;
-    DeviceListFragment mDeviceListFragment;
+    private BluetoothCommunicator mBluetoothCommunicator;
+    private SteeringWheelControlFragment mControlFragment;
+    private DeviceListFragment mDeviceListFragment;
+
+    private PrefManager mPrefManager;
 
     private static final int PERMISSION_REQUEST_BLUETOOTH = 1;
 
@@ -60,6 +64,9 @@ public class ControlActivity extends PreferenceAdaptActivity
                     SteeringWheelView.STEERING_WHEEL_MAX_ROTATION.intValue(),
                     Command.CODE.SteeringAngle.getCommMinValue(), Command.CODE.SteeringAngle.getCommMaxValue());
 
+            Log.d(TAG, "speed: " + speed);
+            Log.d(TAG, "angle: " + steeringAngle);
+
             // sends commands
             mBluetoothCommunicator.send(Command.CODE.Speed, speed);
             mBluetoothCommunicator.send(Command.CODE.SteeringAngle, steeringAngle);
@@ -69,7 +76,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     };
 
     /**
-     * The Handler that gets information back from the BluetoothChatService
+     * The Handler that gets information back from the BluetoothCommunicator
      */
     private final Handler mHandler = new Handler() {
         @Override
@@ -119,26 +126,39 @@ public class ControlActivity extends PreferenceAdaptActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        this.isDrawerEnabled = true;
+        this.setNavigationDrawerEnabled(true);
 
         setContentView(R.layout.activity_control);
+
+        mPrefManager = new PrefManager(this);
 
         if (savedInstanceState == null) {
             mControlFragment = SteeringWheelControlFragment.newInstance();
             mDeviceListFragment = DeviceListFragment.newInstance();
 
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG).commit();
-
             try {
-                mBluetoothCommunicator = new BluetoothCommunicator(this, mHandler);
+                BluetoothCommunicator.init(this, mHandler);
+                mBluetoothCommunicator = BluetoothCommunicator.getInstance();
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
             }
-        }
 
-        Log.d(TAG, savedInstanceState == null ? "savedInstance is null" : "savedInstance is not null");
+            String carMacAddress = (String) mPrefManager.readPref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS);
+
+
+            /*
+            If car address is not known yet, opens list of paired devices.
+            If it is known, connects to it and opens control fragment.
+             */
+            if (carMacAddress.equals("")) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
+                        .commit();
+            } else {
+                connectToDevice(mBluetoothCommunicator.getDevice(carMacAddress));
+            }
+        }
 
         //mBluetoothCommunicator.connectToHC_06();
     }
@@ -159,16 +179,24 @@ public class ControlActivity extends PreferenceAdaptActivity
     }
 
     @Override
-    public void deviceSelected(BluetoothDevice device) {
+    public void onDeviceSelected(BluetoothDevice device) {
+        connectToDevice(device);
+    }
+
+    private void connectToDevice(final BluetoothDevice device) {
         mBluetoothCommunicator.connectToDevice(device, new ResponseListener<Boolean>() {
             @Override
             public void onResponse(Boolean response) {
                 if (response.equals(true)) {
+
+                    // saves address in shared preferences
+                    mPrefManager.writePref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS, device.getAddress());
+
                     // opens control fragment - adds this fragment to the back stack, so that user can navigate back
-                    FragmentTransaction transaction = getSupportFragmentManager().beginTransaction();
-                    transaction.replace(R.id.fragment_container, mControlFragment, SteeringWheelControlFragment.TAG);
-                    transaction.addToBackStack(null);
-                    transaction.commit();
+                    getSupportFragmentManager().beginTransaction()
+                            .replace(R.id.fragment_container, mControlFragment, SteeringWheelControlFragment.TAG)
+                            //.addToBackStack(null)
+                            .commit();
 
                     initializeCommandSending();
                 }

@@ -29,10 +29,78 @@ import java.util.Locale;
  */
 public class Utils {
 
+    public enum ControlType {
+        STEERING_WHEEL(1, "Steering wheel"),
+        GYROSCOPE(2, "Gyroscope");
+
+        private Integer mId;
+        private String mName;
+
+        ControlType(Integer id, String name) {
+            mId = id;
+            mName = name;
+        }
+
+        public Integer getId() {
+            return mId;
+        }
+
+        public String getName() {
+            return mName;
+        }
+
+        public static ControlType getById(Integer id) {
+            for (ControlType type : ControlType.values()) {
+                if (type.getId().equals(id))
+                    return type;
+            }
+
+            throw new IllegalArgumentException();
+        }
+    }
+
+    /**
+     * Enum values match C++ enum values in Arduino program.
+     */
+    public enum DriveMode {
+        FREE_DRIVE(1, "Free drive"),
+        SAFE_DRIVE(2, "Safe drive"),
+        AUTOPILOT(3, "Autopilot");
+
+        private Integer mId;
+        private String mName;
+
+        DriveMode(Integer id, String name) {
+            mId = id;
+            mName = name;
+        }
+
+        public Integer getId() {
+            return mId;
+        }
+
+        public String getName() {
+            return mName;
+        }
+
+        public static DriveMode getById(Integer id) {
+            for (DriveMode type : DriveMode.values()) {
+                if (type.getId().equals(id))
+                    return type;
+            }
+
+            throw new IllegalArgumentException();
+        }
+    }
+
     public static final String TAG = Utils.class.getCanonicalName();
 
     // should not be instantiated
     private Utils () {}
+
+    public interface Callback {
+        void onEvent();
+    }
 
     /**
      * Sets default locale for application.
@@ -73,11 +141,6 @@ public class Utils {
             e.printStackTrace();
             return null;
         }
-    }
-
-    public static <T extends Activity> void startActivity(Context context, Class<T> activityClass) {
-        Intent intent = new Intent(context, activityClass);
-        context.startActivity(intent);
     }
 
     public static void copyFileFromAssets(Context context, String source, String destination) {

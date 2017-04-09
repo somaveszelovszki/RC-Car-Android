@@ -1,27 +1,27 @@
 package veszelovszki.soma.rc_car.utils;
 
+import android.content.Context;
+import android.graphics.drawable.Drawable;
+import android.os.Bundle;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
+
 /**
- * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 10.
+ * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 04. 02.
  */
+public class NavigationDrawerListItem extends IconListItem {
 
-public class NavigationDrawerListItem extends ListItem {
+    private Utils.Callback mCallback;
 
-    private Class<? extends PreferenceAdaptActivity> mCallbackClass;
+    public NavigationDrawerListItem(Context context, Integer id, String title, @DrawableRes Integer iconResId,
+                                    Utils.Callback callback) {
+        super(context, id, title, iconResId);
 
-    public NavigationDrawerListItem(){
-        super();
+        mCallback = callback;
     }
 
-    public NavigationDrawerListItem(Integer id, String title, Class<? extends PreferenceAdaptActivity> callbackClass) {
-        super(id, title);
-        mCallbackClass = callbackClass;
-    }
-
-    public void setCallbackClass(Class<? extends PreferenceAdaptActivity> callbackClass) {
-        mCallbackClass = callbackClass;
-    }
-
-    public Class<? extends PreferenceAdaptActivity> getCallbackClass() {
-        return mCallbackClass;
+    public Utils.Callback getCallback() {
+        return mCallback;
     }
 }

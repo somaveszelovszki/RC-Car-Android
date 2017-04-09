@@ -8,8 +8,6 @@ public class ListItem {
     private Integer mId;
     private String mTitle;
 
-    public ListItem(){}
-
     public ListItem(Integer id, String title) {
         mId = id;
         mTitle = title;

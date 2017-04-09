@@ -1,16 +1,22 @@
 package veszelovszki.soma.rc_car;
 
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v7.app.ActionBar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import veszelovszki.soma.rc_car.common.Command;
+import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
 import veszelovszki.soma.rc_car.fragment.SettingsFragment;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
+import veszelovszki.soma.rc_car.utils.Utils;
 
-public class SettingsActivity extends PreferenceAdaptActivity{
+public class SettingsActivity extends PreferenceAdaptActivity
+        implements SharedPreferences.OnSharedPreferenceChangeListener {
 
     private SettingsFragment mSettingsFragment;
 
@@ -70,5 +76,25 @@ public class SettingsActivity extends PreferenceAdaptActivity{
 
     public PrefManager.PREFERENCE getFirstRunPreference() {
         return PrefManager.PREFERENCE.FIRST_START_SETTINGS;
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences mSharedPreferences,
+                                          String key) {
+
+        PrefManager.PREFERENCE pref = PrefManager.PREFERENCE.getByKey(key);
+
+        Object newValue = mPrefManager.readPref(pref);
+
+        switch (pref) {
+            case CONTROL_TYPE:
+                // TODO
+                break;
+
+            case DRIVE_MODE:
+                // TODO
+                BluetoothCommunicator.getInstance().send(Command.CODE.DriveMode, newValue);
+                break;
+        }
     }
 }

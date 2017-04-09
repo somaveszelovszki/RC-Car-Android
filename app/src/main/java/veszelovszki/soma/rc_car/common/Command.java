@@ -1,5 +1,7 @@
 package veszelovszki.soma.rc_car.common;
 
+import android.util.Log;
+
 /**
  * Command object describes command data - code and value.
  * Codes match Arduino project's command codes.
@@ -11,7 +13,8 @@ public class Command {
     public enum CODE {
         Speed(1, 0, 100),           // [0 100] contains direction as well (>50 means FORWARD)
         SteeringAngle(2, -100, 100),  // [-100 100] positive means steering to the right
-        ServoRecalibrate(3, -100, 100);    // [-100 100] same as steering angle
+        ServoRecalibrate(3, -100, 100),    // [-100 100] same as steering angle
+        DriveMode(4);    // sets drive mode to one of the values in Utils.DriveMode
 
         private Integer mCode;
 
@@ -102,7 +105,7 @@ public class Command {
      */
     @Override
     public String toString() {
-        return mCode.getCode() + SEPARATOR_CHAR + mValue + END_CHAR;
+        return mCode.getCode().toString() + SEPARATOR_CHAR + mValue + END_CHAR;
     }
 
 

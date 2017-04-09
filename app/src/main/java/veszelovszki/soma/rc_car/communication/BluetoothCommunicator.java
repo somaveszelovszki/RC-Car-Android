@@ -1,4 +1,4 @@
-package veszelovszki.soma.rc_car.utils;
+package veszelovszki.soma.rc_car.communication;
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -23,12 +23,26 @@ import java.util.Set;
 import java.util.UUID;
 
 import veszelovszki.soma.rc_car.common.Command;
+import veszelovszki.soma.rc_car.utils.ResponseListener;
 
 /**
  * Handles Bluetooth communications. Sends and receives data.
+ *
+ * This is a Singleton class.
+ *
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 01. 11.
  */
 public class BluetoothCommunicator {
+
+    private static BluetoothCommunicator instance;
+
+    public static void init(Context context, Handler handler) {
+        instance = new BluetoothCommunicator(context, handler);
+    }
+
+    public static BluetoothCommunicator getInstance() {
+        return instance;
+    }
 
     public enum Constant {
         MESSAGE_READ(1),
@@ -66,14 +80,11 @@ public class BluetoothCommunicator {
     private String BLUETOOTH_SERIAL_BOARD_ADDRESS;
 
     BluetoothAdapter mBluetoothAdapter;
-    Context mContext;
 
     private ConnectTask mConnectTask;
     private ConnectedThread mConnectedThread;
-
-    //private ConnectThread mConnectThread;
-
     private Handler mHandler;
+    private Context mContext;
 
 
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
@@ -82,14 +93,11 @@ public class BluetoothCommunicator {
     private BroadcastReceiver ACTION_FOUND_Receiver;
     private BroadcastReceiver ACTION_BOND_STATE_CHANGED_Receiver;
 
-    public BluetoothCommunicator(Context context, Handler handler) throws Exception {
+    private BluetoothCommunicator(Context context, Handler handler) {
         mContext = context;
+
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mHandler = handler;
-
-        if (mBluetoothAdapter == null) {
-            throw new Exception();
-        }
 
         // initializes and registers ACTION_FOUND receiver
         ACTION_FOUND_Receiver = new BroadcastReceiver() {
@@ -137,12 +145,19 @@ public class BluetoothCommunicator {
         mContext.registerReceiver(ACTION_BOND_STATE_CHANGED_Receiver, intent);
     }
 
+    public BluetoothDevice getDevice(String address) {
+        return mBluetoothAdapter.getRemoteDevice(address);
+    }
+
     public Set<BluetoothDevice> getPairedDevices() {
         this.turnOn();
         return mBluetoothAdapter.getBondedDevices();
     }
 
     public void connectToDevice(BluetoothDevice device, ResponseListener<Boolean> responseListener) {
+
+        turnOn();
+
         mConnectTask = new ConnectTask(device, responseListener);
         mConnectTask.execute();
 
@@ -181,14 +196,14 @@ public class BluetoothCommunicator {
         return this.send(command.toString());
     }
 
-    public Boolean send(String message) {
+    private Boolean send(String message) {
 
         Log.d(TAG, "message: " + message);
 
         return this.send(message != null ? message.getBytes() : null);
     }
 
-    public Boolean send(byte[] bytes) {
+    private Boolean send(byte[] bytes) {
         if (mConnectedThread != null) {
             return mConnectedThread.write(bytes);
         }
@@ -272,24 +287,19 @@ public class BluetoothCommunicator {
             // because mmSocket is final.
             BluetoothSocket tmp = null;
 
-            try {
-                if(Build.VERSION.SDK_INT >= 10){
-                    try {
-                        final Method  m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
-                        tmp = (BluetoothSocket) m.invoke(device, BLUETOOTH_SERIAL_BOARD_UUID);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Could not create Insecure RFComm Connection",e);
-                    }
-                } else {
-                    // Get a BluetoothSocket to connect with the given BluetoothDevice.
-                    tmp = device.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
-                }
-            } catch (IOException e) {
-                Log.e(TAG, "Socket's create() method failed", e);
-            }
-            mmSocket = tmp;
-
             mResponseListener = responseListener;
+
+            try {
+                tmp = device.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
+                //final Method  m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
+                //tmp = (BluetoothSocket) m.invoke(device, BLUETOOTH_SERIAL_BOARD_UUID);
+            } catch (Exception e) {
+                mResponseListener.onError(e);
+                mmSocket = null;
+                return;
+            }
+
+            mmSocket = tmp;
 
             Log.d(TAG, "Created socket!");
         }
@@ -299,6 +309,11 @@ public class BluetoothCommunicator {
 
             // Cancel discovery because it otherwise slows down the connection.
             mBluetoothAdapter.cancelDiscovery();
+
+            if (mmSocket == null) {
+                mResponseListener.onError(new Exception("Socket is null."));
+                return false;
+            }
 
             try {
                 // Connect to the remote device through the socket. This call blocks
@@ -412,70 +427,6 @@ public class BluetoothCommunicator {
             }
 
             return false;
-        }
-    }
-
-
-
-
-    private class ConnectThread extends Thread {
-        private final BluetoothSocket mmSocket;
-
-        public ConnectThread(BluetoothDevice device) {
-            BluetoothSocket tmp = null;
-
-            // Get a BluetoothSocket for a connection with the
-            // given BluetoothDevice
-            try {
-                if(Build.VERSION.SDK_INT >= 10){
-                    try {
-                        final Method  m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
-                        tmp = (BluetoothSocket) m.invoke(device, BLUETOOTH_SERIAL_BOARD_UUID);
-                    } catch (Exception e) {
-                        Log.e(TAG, "Could not create Insecure RFComm Connection",e);
-                    }
-                } else {
-                    // Get a BluetoothSocket to connect with the given BluetoothDevice.
-                    tmp = device.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
-                }
-            } catch (IOException e) {
-            }
-            mmSocket = tmp;
-        }
-
-        public void run() {
-
-            // Always cancel discovery because it will slow down a connection
-            mBluetoothAdapter.cancelDiscovery();
-
-            // Make a connection to the BluetoothSocket
-            try {
-                // This is a blocking call and will only return on a
-                // successful connection or an exception
-                mmSocket.connect();
-            } catch (IOException e) {
-                // Close the socket
-                try {
-                    mmSocket.close();
-                } catch (IOException e2) {
-                    e2.printStackTrace();
-                }
-                return;
-            }
-
-            //mConnectThread = null;
-
-            Log.d(TAG, "Connected to the device through the socket!");
-
-            mConnectedThread = new ConnectedThread(mmSocket);
-            mConnectedThread.start();
-        }
-        public void cancel() {
-            try {
-                mmSocket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
         }
     }
 }

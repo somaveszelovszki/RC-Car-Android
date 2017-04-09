@@ -2,6 +2,7 @@ package veszelovszki.soma.rc_car.utils;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.preference.PreferenceActivity;
 import android.preference.PreferenceManager;
 import android.util.Log;
 
@@ -98,6 +99,11 @@ public class PrefManager {
 
         // default app language is English
         APP_LANGUAGE("app_language", String.class, "EN"),
+        CAR_MAC_ADDRESS("car_mac_address", String.class, ""),
+        CONTROL_TYPE("pref_control_type", Integer.class, Utils.ControlType.STEERING_WHEEL.getId()),
+        DRIVE_MODE("pref_drive_mode", String.class, Utils.DriveMode.FREE_DRIVE.getId().toString()),
+
+
         FIRST_START_CONTROL("first_start_control", Boolean.class, true),
         FIRST_START_PROFILE("first_start_profile", Boolean.class, true),
         FIRST_START_SETTINGS("first_start_settings", Boolean.class, true);
@@ -122,6 +128,16 @@ public class PrefManager {
 
         public Object getDefaultValue() {
             return defaultValue;
+        }
+
+        public static PREFERENCE getByKey(String key) {
+            for (PREFERENCE pref : PREFERENCE.values()) {
+                if (pref.getKey().equals(key)) {
+                    return pref;
+                }
+            }
+
+            throw new IllegalArgumentException();
         }
     }
 }
