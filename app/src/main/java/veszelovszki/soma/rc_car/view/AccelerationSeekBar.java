@@ -51,6 +51,7 @@ public class AccelerationSeekBar extends VerticalSeekBar
         this.setProgressDrawable(ResourcesCompat.getDrawable(getResources(),
                 R.drawable.accelerator_seekbar_progress, null));
 
+
         //this.setLayoutParams(new LinearLayout.LayoutParams(this.getWidth(), HEIGHT));
 
         this.setOnSeekBarChangeListener(this);

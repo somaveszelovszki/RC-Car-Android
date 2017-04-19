@@ -15,6 +15,10 @@ import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
 import veszelovszki.soma.rc_car.utils.Utils;
 
+/**
+ * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016. 11. 13.
+ */
+
 public class SettingsActivity extends PreferenceAdaptActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
 
@@ -84,8 +88,6 @@ public class SettingsActivity extends PreferenceAdaptActivity
 
         PrefManager.PREFERENCE pref = PrefManager.PREFERENCE.getByKey(key);
 
-        Object newValue = mPrefManager.readPref(pref);
-
         switch (pref) {
             case CONTROL_TYPE:
                 // TODO
@@ -93,7 +95,6 @@ public class SettingsActivity extends PreferenceAdaptActivity
 
             case DRIVE_MODE:
                 // TODO
-                BluetoothCommunicator.getInstance().send(Command.CODE.DriveMode, newValue);
                 break;
         }
     }

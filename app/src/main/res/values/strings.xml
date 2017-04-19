@@ -17,5 +17,6 @@
     <string name="pref_drive_mode">pref_drive_mode</string>
     <string name="drive_mode">Drive mode</string>
     <string name="select_drive_mode">Select drive mode</string>
+    <string name="bluetooth_connection_setup_error">Could not set up Bluetooth connection.</string>
 
 </resources>

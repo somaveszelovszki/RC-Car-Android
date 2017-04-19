@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
@@ -23,7 +22,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import veszelovszki.soma.rc_car.common.Command;
-import veszelovszki.soma.rc_car.utils.ResponseListener;
+import veszelovszki.soma.rc_car.utils.Utils.*;
 
 /**
  * Handles Bluetooth communications. Sends and receives data.
@@ -34,14 +33,8 @@ import veszelovszki.soma.rc_car.utils.ResponseListener;
  */
 public class BluetoothCommunicator {
 
-    private static BluetoothCommunicator instance;
-
-    public static void init(Context context, Handler handler) {
-        instance = new BluetoothCommunicator(context, handler);
-    }
-
-    public static BluetoothCommunicator getInstance() {
-        return instance;
+    public interface EventListener {
+        void onBluetoothConnected(BluetoothDevice device);
     }
 
     public enum Constant {
@@ -65,8 +58,7 @@ public class BluetoothCommunicator {
                     return constant;
                 }
             }
-
-            return null;
+            throw new IllegalArgumentException();
         }
     }
 
@@ -77,7 +69,6 @@ public class BluetoothCommunicator {
      * @see <a href="https://developer.android.com/reference/android/bluetooth/BluetoothDevice.html</a>
      */
     private final UUID BLUETOOTH_SERIAL_BOARD_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
-    private String BLUETOOTH_SERIAL_BOARD_ADDRESS;
 
     BluetoothAdapter mBluetoothAdapter;
 
@@ -88,61 +79,24 @@ public class BluetoothCommunicator {
 
 
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
-    public static final int REQUEST_DISCOVERABLE = 2;
 
-    private BroadcastReceiver ACTION_FOUND_Receiver;
-    private BroadcastReceiver ACTION_BOND_STATE_CHANGED_Receiver;
+    private AdvancedBroadcastReceiver mConnectionStateReceiver;
+    private EventListener mListener;
 
-    private BluetoothCommunicator(Context context, Handler handler) {
+    public BluetoothCommunicator(Context context, AdvancedBroadcastReceiver connectionStateReceiver, Handler handler) {
         mContext = context;
+
+        mListener = (EventListener) context;
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
         mHandler = handler;
+        mConnectionStateReceiver = connectionStateReceiver;
 
-        // initializes and registers ACTION_FOUND receiver
-        ACTION_FOUND_Receiver = new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-                if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                    // Discovery has found a device. Get the BluetoothDevice
-                    // object and its info from the Intent.
-                    BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    String deviceName = device.getName();
-                    String deviceHardwareAddress = device.getAddress(); // MAC address
 
-                    Log.d(TAG, "Detected device: " + deviceName + " (" + deviceHardwareAddress + ")");
-
-                    if ("HC-06".equals(deviceName)) {
-                        //mBluetoothService.connectToDevice(device);
-                    }
-                }
-            }
-        };
-
-        IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
-        mContext.registerReceiver(ACTION_FOUND_Receiver, filter);
-
-        // initializes and registers ACTION_BOND_STATE_CHANGED receiver
-        ACTION_BOND_STATE_CHANGED_Receiver = new BroadcastReceiver() {
-            public void onReceive(Context context, Intent intent) {
-                String action = intent.getAction();
-
-                if (BluetoothDevice.ACTION_BOND_STATE_CHANGED.equals(action)) {
-                    final int state = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.ERROR);
-                    final int prevState = intent.getIntExtra(BluetoothDevice.EXTRA_PREVIOUS_BOND_STATE, BluetoothDevice.ERROR);
-
-                    if (state == BluetoothDevice.BOND_BONDED && prevState == BluetoothDevice.BOND_BONDING) {
-                        Log.d(TAG, "Paired.");
-                    } else if (state == BluetoothDevice.BOND_NONE && prevState == BluetoothDevice.BOND_BONDED) {
-                        Log.d(TAG, "Un-Paired.");
-                    }
-
-                }
-            }
-        };
-
-        IntentFilter intent = new IntentFilter(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
-        mContext.registerReceiver(ACTION_BOND_STATE_CHANGED_Receiver, intent);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        mContext.registerReceiver(mConnectionStateReceiver, filter);
     }
 
     public BluetoothDevice getDevice(String address) {
@@ -154,38 +108,11 @@ public class BluetoothCommunicator {
         return mBluetoothAdapter.getBondedDevices();
     }
 
-    public void connectToDevice(BluetoothDevice device, ResponseListener<Boolean> responseListener) {
-
+    public void connectToDevice(BluetoothDevice device) {
         turnOn();
 
-        mConnectTask = new ConnectTask(device, responseListener);
+        mConnectTask = new ConnectTask(device);
         mConnectTask.execute();
-
-        //mConnectThread = new ConnectThread(device);
-        //mConnectThread.start();
-    }
-
-
-    public void connectToHC_06() {
-        turnOn();
-        //setDiscoverable();
-
-        Set<BluetoothDevice> pairedDevices = mBluetoothAdapter.getBondedDevices();
-
-        if (pairedDevices.size() > 0) {
-            // There are paired devices. Get the name and address of each paired device.
-            for (BluetoothDevice device : pairedDevices) {
-                String deviceName = device.getName();
-                String deviceHardwareAddress = device.getAddress(); // MAC address
-
-                Log.d(TAG, "Detected device: " + deviceName + " (" + deviceHardwareAddress + ")");
-
-                if ("HC-06".equals(deviceName)) {
-                    Log.d(TAG, "Connected to HC-06!!!");
-                    this.connectToDevice(device, null);
-                }
-            }
-        }
     }
 
     public Boolean send(Command.CODE code, Object value) {
@@ -221,52 +148,29 @@ public class BluetoothCommunicator {
         Log.d(TAG, "Turned off bluetooth.");
     }
 
-
-    public void setDiscoverable() {
-        Intent setDiscoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
-        ((Activity) mContext).startActivityForResult(setDiscoverableIntent, REQUEST_DISCOVERABLE);
+    private Boolean isEnabled() {
+        return mBluetoothAdapter.isEnabled();
     }
 
     private Boolean setBluetooth(Boolean enable) {
 
-        boolean isEnabled = mBluetoothAdapter.isEnabled();
+        boolean enabled = this.isEnabled();
 
-        if (enable && !isEnabled) {
+        if (enable && !enabled) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             ((Activity)mContext).startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
             return true;
-        } else if (!enable && isEnabled) {
+        } else if (!enable && enabled) {
             return mBluetoothAdapter.disable();
         }
         // No need to change bluetooth state
-        return isEnabled;
-    }
-
-    private void pairDevice(BluetoothDevice device) {
-        try {
-            Log.d("pairDevice()", "Start Pairing...");
-            Method m = device.getClass().getMethod("createBond", (Class[]) null);
-            m.invoke(device, (Object[]) null);
-            Log.d("pairDevice()", "Pairing finished.");
-        } catch (Exception e) {
-            Log.e("pairDevice()", e.getMessage());
-        }
-    }
-
-    private void unpairDevice(BluetoothDevice device) {
-        try {
-            Log.d("unpairDevice()", "Start Un-Pairing...");
-            Method m = device.getClass().getMethod("removeBond", (Class[]) null);
-            m.invoke(device, (Object[]) null);
-            Log.d("unpairDevice()", "Un-Pairing finished.");
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage());
-        }
+        return enabled;
     }
 
     public void destroy() {
-        mContext.unregisterReceiver(ACTION_FOUND_Receiver);
-        mContext.unregisterReceiver(ACTION_BOND_STATE_CHANGED_Receiver);
+        mContext.unregisterReceiver(mConnectionStateReceiver);
+
+        turnOff();
 
         if (mConnectTask != null) {
             mConnectTask.cancel(true);
@@ -280,21 +184,21 @@ public class BluetoothCommunicator {
     private class ConnectTask extends AsyncTask<Void, Void, Boolean> {
 
         private final BluetoothSocket mmSocket;
-        private ResponseListener<Boolean> mResponseListener;
+        private final BluetoothDevice mmDevice;
 
-        ConnectTask(BluetoothDevice device, ResponseListener<Boolean> responseListener) {
+        ConnectTask(BluetoothDevice device) {
             // Use a temporary object that is later assigned to mmSocket
             // because mmSocket is final.
-            BluetoothSocket tmp = null;
+            BluetoothSocket tmp;
 
-            mResponseListener = responseListener;
+            mmDevice = device;
 
             try {
-                tmp = device.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
+                tmp = mmDevice.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
                 //final Method  m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
                 //tmp = (BluetoothSocket) m.invoke(device, BLUETOOTH_SERIAL_BOARD_UUID);
             } catch (Exception e) {
-                mResponseListener.onError(e);
+                mConnectionStateReceiver.onError(e);
                 mmSocket = null;
                 return;
             }
@@ -311,7 +215,7 @@ public class BluetoothCommunicator {
             mBluetoothAdapter.cancelDiscovery();
 
             if (mmSocket == null) {
-                mResponseListener.onError(new Exception("Socket is null."));
+                mConnectionStateReceiver.onError(new Exception("Socket is null."));
                 return false;
             }
 
@@ -327,14 +231,14 @@ public class BluetoothCommunicator {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
 
-                if (mResponseListener != null) {
-                    mResponseListener.onError(connectException);
-                }
+                mConnectionStateReceiver.onError(connectException);
 
                 return false;
             }
 
             Log.d(TAG, "Connected to the device through the socket!");
+
+            mListener.onBluetoothConnected(mmDevice);
 
             mConnectedThread = new ConnectedThread(mmSocket);
             mConnectedThread.start();
@@ -344,14 +248,7 @@ public class BluetoothCommunicator {
 
         @Override
         public void onPostExecute(Boolean result) {
-            if (result.equals(true)) {
-                if (mResponseListener != null) {
-                    mResponseListener.onResponse(true);
-                }
-            }
-
-            // does not call listener method if result is false,
-            // because in this case the error listener has already been called
+            // does nothing, connection broadcast listener will handle new connection
         }
     }
 

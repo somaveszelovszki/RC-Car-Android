@@ -9,6 +9,6 @@
         android:id="@+id/steering_wheel"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:src="@drawable/rc_steering_wheel_debug"
+        android:src="@drawable/rc_steering_wheel"
         />
 </RelativeLayout>

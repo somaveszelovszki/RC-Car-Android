@@ -1,6 +1,7 @@
 package veszelovszki.soma.rc_car.utils;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetManager;
@@ -28,6 +29,15 @@ import java.util.Locale;
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016.07.21..
  */
 public class Utils {
+
+    public abstract class ResponseListener<T> {
+        public abstract void onResponse(T response);
+        public abstract void onError(Exception e);
+    }
+
+    public abstract static class AdvancedBroadcastReceiver extends BroadcastReceiver {
+        public abstract void onError(Exception e);
+    }
 
     public enum ControlType {
         STEERING_WHEEL(1, "Steering wheel"),

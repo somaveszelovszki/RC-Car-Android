@@ -1,5 +1,6 @@
 package veszelovszki.soma.rc_car.utils;
 
+import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -147,24 +148,6 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
     public abstract PrefManager.PREFERENCE getFirstRunPreference();
 
     /**
-     * Handles preference event.
-     * @param event preference event
-     */
-    public void onPreferenceEvent(ActivityManager.PREF_EVENT event) {
-        switch (event) {
-            case LANGUAGE_CHANGED:
-                // if language changed, sets default locale
-                // and recreates activity
-                this.setLocaleFromPrefs();
-                this.recreate();
-
-                break;
-            default:
-                // do nothing with other events
-        }
-    }
-
-    /**
      * Sets locale from preferences.
      */
     protected void setLocaleFromPrefs() {
@@ -192,14 +175,6 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
         config.locale = locale;
         getBaseContext().getResources().updateConfiguration(config,
                 getBaseContext().getResources().getDisplayMetrics());
-    }
-
-    @Override
-    protected void onDestroy(){
-
-        ActivityManager.getInstance().remove(this);
-
-        super.onDestroy();
     }
 
     protected View getContentView() {
