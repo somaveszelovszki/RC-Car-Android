@@ -12,9 +12,8 @@ public class Message {
 
     public enum CODE {
         Speed(1, -55, 55),           // in [cm/sec] (>0 means FORWARD)
-        SteeringAngle(2, (int) Math.toRadians(-60), (int) Math.toRadians(60)),  // [-100 100] positive means clockwise
-        ServoRecalibrate(3, -100, 100),    // [-100 100] same as steering angle
-        DriveMode(4);    // sets drive mode to one of the values in Utils.DriveMode
+        SteeringAngle(2, (int) Math.toRadians(-60), (int) Math.toRadians(60)),  // in radians, positive means clockwise
+        DriveMode(3);    // sets drive mode to one of the values in Utils.DriveMode
 
         private Integer mCode;
 
