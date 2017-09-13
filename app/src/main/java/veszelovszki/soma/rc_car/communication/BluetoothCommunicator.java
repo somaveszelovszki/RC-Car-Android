@@ -11,7 +11,6 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.util.Log;
 
 import java.io.IOException;
@@ -21,7 +20,7 @@ import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.UUID;
 
-import veszelovszki.soma.rc_car.common.Command;
+import veszelovszki.soma.rc_car.common.Message;
 import veszelovszki.soma.rc_car.utils.Utils.*;
 
 /**
@@ -31,35 +30,10 @@ import veszelovszki.soma.rc_car.utils.Utils.*;
  *
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 01. 11.
  */
-public class BluetoothCommunicator {
+public class BluetoothCommunicator extends Communicator {
 
     public interface EventListener {
         void onBluetoothConnected(BluetoothDevice device);
-    }
-
-    public enum Constant {
-        MESSAGE_READ(1),
-        MESSAGE_WRITE(2),
-        MESSAGE_ERROR(3);
-
-        private Integer num;
-
-        Constant(Integer num) {
-            this.num = num;
-        }
-
-        public Integer value() {
-            return num;
-        }
-
-        public static Constant constantFromInteger(Integer num) {
-            for (Constant constant : Constant.values()) {
-                if (constant.num.equals(num)) {
-                    return constant;
-                }
-            }
-            throw new IllegalArgumentException();
-        }
     }
 
     private static final String TAG = BluetoothCommunicator.class.getCanonicalName();
@@ -77,6 +51,7 @@ public class BluetoothCommunicator {
     private Handler mHandler;
     private Context mContext;
 
+    private BluetoothDevice mDevice;
 
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
@@ -111,16 +86,23 @@ public class BluetoothCommunicator {
     public void connectToDevice(BluetoothDevice device) {
         turnOn();
 
-        mConnectTask = new ConnectTask(device);
+        mDevice = device;
+        connect();
+    }
+
+    @Override
+    public void connect() {
+        mConnectTask = new ConnectTask();
         mConnectTask.execute();
     }
 
-    public Boolean send(Command.CODE code, Object value) {
-        return this.send(new Command(code, value));
+    public Boolean send(Message.CODE code, Object value) {
+        return this.send(new Message(code, value));
     }
 
-    public Boolean send(Command command) {
-        return this.send(command.toString());
+    @Override
+    public Boolean send(Message msg) {
+        return this.send(msg.toString());
     }
 
     private Boolean send(String message) {
@@ -167,7 +149,8 @@ public class BluetoothCommunicator {
         return enabled;
     }
 
-    public void destroy() {
+    @Override
+    public void cancel() {
         mContext.unregisterReceiver(mConnectionStateReceiver);
 
         turnOff();
@@ -184,17 +167,14 @@ public class BluetoothCommunicator {
     private class ConnectTask extends AsyncTask<Void, Void, Boolean> {
 
         private final BluetoothSocket mmSocket;
-        private final BluetoothDevice mmDevice;
 
-        ConnectTask(BluetoothDevice device) {
+        ConnectTask() {
             // Use a temporary object that is later assigned to mmSocket
             // because mmSocket is final.
             BluetoothSocket tmp;
 
-            mmDevice = device;
-
             try {
-                tmp = mmDevice.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
+                tmp = mDevice.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
                 //final Method  m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
                 //tmp = (BluetoothSocket) m.invoke(device, BLUETOOTH_SERIAL_BOARD_UUID);
             } catch (Exception e) {
@@ -238,7 +218,7 @@ public class BluetoothCommunicator {
 
             Log.d(TAG, "Connected to the device through the socket!");
 
-            mListener.onBluetoothConnected(mmDevice);
+            mListener.onBluetoothConnected(mDevice);
 
             mConnectedThread = new ConnectedThread(mmSocket);
             mConnectedThread.start();
@@ -287,11 +267,7 @@ public class BluetoothCommunicator {
                 try {
                     // Read from the InputStream.
                     numBytes = mmInStream.read(mmBuffer);
-                    // Send the obtained bytes to the UI activity.
-                    Message readMsg = mHandler.obtainMessage(
-                            Constant.MESSAGE_READ.value(), numBytes, -1,
-                            mmBuffer);
-                    readMsg.sendToTarget();
+                    // TODO do something with message
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream was disconnected", e);
                     break;
@@ -303,27 +279,11 @@ public class BluetoothCommunicator {
         private Boolean write(byte[] bytes) {
             try {
                 mmOutStream.write(bytes);
-
-                // Share the sent message with the UI activity.
-                Message writtenMsg = mHandler.obtainMessage(
-                        Constant.MESSAGE_WRITE.value(), -1, -1, bytes);
-                writtenMsg.sendToTarget();
-
                 return true;
             } catch (IOException e) {
                 Log.e(TAG, "Error occurred when sending data", e);
-
-                // Send a failure message back to the activity.
-                Message writeErrorMsg =
-                        mHandler.obtainMessage(Constant.MESSAGE_ERROR.value());
-                Bundle bundle = new Bundle();
-                bundle.putString("toast",
-                        "Couldn't send data to the other device");
-                writeErrorMsg.setData(bundle);
-                mHandler.sendMessage(writeErrorMsg);
+                return false;
             }
-
-            return false;
         }
     }
 }

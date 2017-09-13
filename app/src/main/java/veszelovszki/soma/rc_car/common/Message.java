@@ -3,16 +3,16 @@ package veszelovszki.soma.rc_car.common;
 import android.util.Log;
 
 /**
- * Command object describes command data - code and value.
- * Codes match Arduino project's command codes.
+ * Message object describes msg data - code and value.
+ * Codes match Arduino project's msg codes.
  * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 09.
  */
 
-public class Command {
+public class Message {
 
     public enum CODE {
-        Speed(1, 0, 100),           // [0 100] contains direction as well (>50 means FORWARD)
-        SteeringAngle(2, -100, 100),  // [-100 100] positive means steering to the right
+        Speed(1, -55, 55),           // in [cm/sec] (>0 means FORWARD)
+        SteeringAngle(2, (int) Math.toRadians(-60), (int) Math.toRadians(60)),  // [-100 100] positive means clockwise
         ServoRecalibrate(3, -100, 100),    // [-100 100] same as steering angle
         DriveMode(4);    // sets drive mode to one of the values in Utils.DriveMode
 
@@ -35,11 +35,11 @@ public class Command {
             return mCode;
         }
 
-        public Integer getCommMinValue() {
+        public Integer getMinValue() {
             return mCommMinValue;
         }
 
-        public Integer getCommMaxValue() {
+        public Integer getMaxValue() {
             return mCommMaxValue;
         }
 
@@ -61,7 +61,7 @@ public class Command {
     public static final Character SEPARATOR_CHAR = ':';
 
 
-    public Command(CODE code, Object value) {
+    public Message(CODE code, Object value) {
         mCode = code;
         mValue = String.valueOf(value);
     }
@@ -79,27 +79,27 @@ public class Command {
     }
 
     /**
-     * Parses Command from String object.
+     * Parses Message from String object.
      * e.g. incoming String is "1:10"
      * output will be:
-     *    Command { code=1 and value=10 }
+     *    Message { code=1 and value=10 }
      */
-    public Command fromString(String commandString) {
+    public Message fromString(String msgString) {
 
         // finds separator in string (separates key from value)
-        Integer separatorIndex = commandString.indexOf(SEPARATOR_CHAR);
+        Integer separatorIndex = msgString.indexOf(SEPARATOR_CHAR);
 
         // code is before separator
-        Integer code = Integer.parseInt(commandString.substring(0, separatorIndex));
+        Integer code = Integer.parseInt(msgString.substring(0, separatorIndex));
 
         // value is after separator
-        String value = commandString.substring(separatorIndex + 1);
+        String value = msgString.substring(separatorIndex + 1);
 
-        return new Command(CODE.getByCode(code), value);
+        return new Message(CODE.getByCode(code), value);
     }
 
     /**
-     * Generates String from Command object.
+     * Generates String from Message object.
      * e.g. code=1 and value=10
      * output will be "1:10;"
      */

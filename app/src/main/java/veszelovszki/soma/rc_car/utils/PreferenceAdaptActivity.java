@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
+import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -225,5 +226,14 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
     public <T extends Activity> void startActivityAndFinish(Class<T> newActivityClass, Bundle extras) {
         startActivity(newActivityClass, extras);
         this.finish();
+    }
+
+    protected void onError(Exception e){
+        e.printStackTrace();
+        onError();
+    }
+
+    protected void onError() {
+        Snackbar.make(getContentView(), R.string.error, Snackbar.LENGTH_LONG).show();
     }
 }

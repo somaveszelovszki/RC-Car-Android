@@ -8,7 +8,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 
-import veszelovszki.soma.rc_car.common.Command;
+import veszelovszki.soma.rc_car.common.Message;
 import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
 import veszelovszki.soma.rc_car.fragment.SettingsFragment;
 import veszelovszki.soma.rc_car.utils.PrefManager;

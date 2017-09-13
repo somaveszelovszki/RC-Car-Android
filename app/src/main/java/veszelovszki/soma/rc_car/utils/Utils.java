@@ -112,6 +112,21 @@ public class Utils {
         void onEvent();
     }
 
+    public static class SynchronizedValue<T> {
+        public T value;
+        public final Object lock = new Object();
+
+        public SynchronizedValue(T value) {
+            this.value = value;
+        }
+
+        public void setValue(T value) {
+            synchronized (lock) {
+                this.value = value;
+            }
+        }
+    }
+
     /**
      * Sets default locale for application.
      * @param activity
@@ -125,14 +140,6 @@ public class Utils {
         config.locale = locale;
         activity.getBaseContext().getResources().updateConfiguration(config,
                 activity.getBaseContext().getResources().getDisplayMetrics());
-    }
-
-    public static String getDefaultLocale() {
-        return Locale.getDefault().getLanguage();
-    }
-
-    public static String getPlaceAssetFolder(Integer placeId) {
-        return  "file:///android_asset/" + placeId + "/";
     }
 
     public static Drawable drawableFromAsset(Context context, String imageUrl) {
@@ -210,35 +217,6 @@ public class Utils {
         return dir;
     }
 
-    public static class Result {
-
-        private Boolean success;
-        private String message;
-
-        public Result() {}
-
-        public Result setSuccess(Boolean success) {
-            this.success = success;
-
-            return this;
-        }
-
-        public Result setMessage(String message) {
-            this.message = message;
-
-            return this;
-        }
-
-        public Boolean isSuccessful() {
-            return success;
-        }
-
-        public String getMessage() {
-            return message;
-        }
-    }
-
-
     public static Drawable resizeDrawable (Context context, Drawable image, Integer sizeX, Integer sizeY) {
         if ((image == null) || !(image instanceof BitmapDrawable)) {
             return image;
@@ -267,12 +245,11 @@ public class Utils {
 
     public static Integer map(@NonNull Integer value, Integer fromLow, Integer fromHigh, Integer toLow, Integer toHigh) {
 
-        if (value <= fromLow) {
+        if (value <= fromLow)
             return toLow;
-        }
-        if (value >= fromHigh) {
+
+        if (value >= fromHigh)
             return toHigh;
-        }
 
         return toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow);
     }

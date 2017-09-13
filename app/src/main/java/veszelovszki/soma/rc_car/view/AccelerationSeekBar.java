@@ -23,7 +23,8 @@ public class AccelerationSeekBar extends VerticalSeekBar
     ObjectAnimator animation;
     private static final Integer ANIMATION_TIME_MS = 500;
 
-    public static final Integer MAX = 100;
+    public static final Integer MIN_POS = 0;
+    public static final Integer MAX_POS = 100;
     private static final Integer HEIGHT = 20;
 
     public AccelerationSeekBar(Context context) {
@@ -59,7 +60,7 @@ public class AccelerationSeekBar extends VerticalSeekBar
 
     @Override
     public int getMax() {
-        return MAX;
+        return MAX_POS;
     }
 
     @Override
