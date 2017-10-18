@@ -6,21 +6,17 @@ import veszelovszki.soma.rc_car.common.Message;
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017.07.19.
  */
 
-public abstract class Communicator {
+public interface Communicator {
 
-    public interface Listener{
+    interface EventListener{
         void onCommunicatorConnected();
         void onCommunicationError(Exception e);
-        void onNewMessage(String message);
+        void onNewMessage(Message message);
     }
 
-    public abstract void connect();
+    void connect(Object device);
 
-    public synchronized Boolean send(Message.CODE code, Object value) {
-        return this.send(new Message(code, value));
-    }
+    Boolean send(Message msg);
 
-    public abstract Boolean send(Message msg);
-
-    public abstract void cancel();
+    void cancel();
 }

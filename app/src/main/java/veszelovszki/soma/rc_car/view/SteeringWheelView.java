@@ -35,8 +35,8 @@ public class SteeringWheelView extends RelativeLayout {
     private ObjectAnimator animation;
     private static final Integer ANIMATION_TIME_MS = 500;
 
-    public static Float STEERING_WHEEL_MAX_ROTATION = 120f;  // degrees
-    private Float STEERING_WHEEL_JUMP_LIMIT = 50f;  // degrees
+    public static Float STEERING_WHEEL_MAX_ROTATION = (float) Math.toRadians(120);  // degrees
+    private Float STEERING_WHEEL_JUMP_LIMIT = (float) Math.toRadians(50);  // degrees
 
     public SteeringWheelView(Context context) {
         this(context, null);
@@ -64,7 +64,9 @@ public class SteeringWheelView extends RelativeLayout {
     }
 
     public Float getWheelRotation() {
-        return mSteeringWheel.getRotation();
+        // changing signal so that LEFT is positive
+        // returns angle in radians
+        return (float) Math.toRadians(-1 * mSteeringWheel.getRotation());
     }
 
     private void setWheelRotation(Float rotation) {

@@ -8,15 +8,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Method;
 import java.util.Set;
 import java.util.UUID;
 
@@ -30,11 +26,7 @@ import veszelovszki.soma.rc_car.utils.Utils.*;
  *
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 01. 11.
  */
-public class BluetoothCommunicator extends Communicator {
-
-    public interface EventListener {
-        void onBluetoothConnected(BluetoothDevice device);
-    }
+public class BluetoothCommunicator implements Communicator {
 
     private static final String TAG = BluetoothCommunicator.class.getCanonicalName();
 
@@ -48,7 +40,6 @@ public class BluetoothCommunicator extends Communicator {
 
     private ConnectTask mConnectTask;
     private ConnectedThread mConnectedThread;
-    private Handler mHandler;
     private Context mContext;
 
     private BluetoothDevice mDevice;
@@ -56,15 +47,14 @@ public class BluetoothCommunicator extends Communicator {
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
     private AdvancedBroadcastReceiver mConnectionStateReceiver;
-    private EventListener mListener;
+    private Communicator.EventListener mListener;
 
-    public BluetoothCommunicator(Context context, AdvancedBroadcastReceiver connectionStateReceiver, Handler handler) {
+    public BluetoothCommunicator(Context context, AdvancedBroadcastReceiver connectionStateReceiver) {
         mContext = context;
 
         mListener = (EventListener) context;
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mHandler = handler;
         mConnectionStateReceiver = connectionStateReceiver;
 
 
@@ -79,55 +69,29 @@ public class BluetoothCommunicator extends Communicator {
     }
 
     public Set<BluetoothDevice> getPairedDevices() {
-        this.turnOn();
+        setBluetooth(true);
         return mBluetoothAdapter.getBondedDevices();
     }
 
-    public void connectToDevice(BluetoothDevice device) {
-        turnOn();
-
-        mDevice = device;
-        connect();
-    }
-
     @Override
-    public void connect() {
+    public void connect(Object device) {
+        String name = ((BluetoothDevice) device).getName();
+        Log.d(TAG, name != null ? name : "name is NULL");
+        setBluetooth(true);
+        mDevice = (BluetoothDevice) device;
         mConnectTask = new ConnectTask();
         mConnectTask.execute();
     }
 
-    public Boolean send(Message.CODE code, Object value) {
-        return this.send(new Message(code, value));
-    }
-
     @Override
     public Boolean send(Message msg) {
-        return this.send(msg.toString());
-    }
-
-    private Boolean send(String message) {
-
-        Log.d(TAG, "message: " + message);
-
-        return this.send(message != null ? message.getBytes() : null);
+        return this.send(msg.getBytes());
     }
 
     private Boolean send(byte[] bytes) {
-        if (mConnectedThread != null) {
+        if (mConnectedThread != null)
             return mConnectedThread.write(bytes);
-        }
-
         return false;
-    }
-
-    public void turnOn() {
-        setBluetooth(true);
-        Log.d(TAG, "Turned on bluetooth.");
-    }
-
-    public void turnOff() {
-        setBluetooth(false);
-        Log.d(TAG, "Turned off bluetooth.");
     }
 
     private Boolean isEnabled() {
@@ -135,33 +99,26 @@ public class BluetoothCommunicator extends Communicator {
     }
 
     private Boolean setBluetooth(Boolean enable) {
-
-        boolean enabled = this.isEnabled();
-
+        Boolean enabled = isEnabled();
         if (enable && !enabled) {
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-            ((Activity)mContext).startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
+            ((Activity) mContext).startActivityForResult(enableBtIntent, REQUEST_ENABLE_BLUETOOTH);
             return true;
-        } else if (!enable && enabled) {
+        } else if (!enable && enabled)
             return mBluetoothAdapter.disable();
-        }
-        // No need to change bluetooth state
         return enabled;
     }
 
     @Override
     public void cancel() {
         mContext.unregisterReceiver(mConnectionStateReceiver);
+        setBluetooth(false);
 
-        turnOff();
-
-        if (mConnectTask != null) {
+        if (mConnectTask != null)
             mConnectTask.cancel(true);
-        }
 
-        if (mConnectedThread != null) {
+        if (mConnectedThread != null)
             mConnectedThread.interrupt();
-        }
     }
 
     private class ConnectTask extends AsyncTask<Void, Void, Boolean> {
@@ -218,7 +175,7 @@ public class BluetoothCommunicator extends Communicator {
 
             Log.d(TAG, "Connected to the device through the socket!");
 
-            mListener.onBluetoothConnected(mDevice);
+            mListener.onCommunicatorConnected();
 
             mConnectedThread = new ConnectedThread(mmSocket);
             mConnectedThread.start();

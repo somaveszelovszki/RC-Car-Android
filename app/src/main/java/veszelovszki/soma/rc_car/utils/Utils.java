@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.Locale;
 
+import veszelovszki.soma.rc_car.common.ByteArray;
+
 
 /**
  * Contains helper functions that can be used anywhere.
@@ -252,5 +254,68 @@ public class Utils {
             return toHigh;
 
         return toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow);
+    }
+
+    public static Float map(@NonNull Float value, Float fromLow, Float fromHigh, Float toLow, Float toHigh) {
+
+        if (value <= fromLow)
+            return toLow;
+
+        if (value >= fromHigh)
+            return toHigh;
+
+        return toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow);
+    }
+
+    public static byte[] concatByteArrays(byte[] a, byte[] b){
+        byte[] res = new byte[a.length + b.length];
+        System.arraycopy(a, 0, res, 0, a.length);
+        System.arraycopy(b, 0, res, a.length, b.length);
+        return res;
+    }
+
+    public static byte[] getBytes(byte[] bytes, int startIndex, int size){
+        byte[] res = new byte[size];
+        System.arraycopy(bytes, startIndex, res, 0, size);
+        return res;
+    }
+
+    public static byte[] getLower32bits(byte[] bytes){
+        return getBytes(bytes, bytes.length - 4, 4);
+    }
+
+    public static byte[] getHigher32bits(byte[] bytes){
+        return getBytes(bytes, bytes.length - 8, 4);
+    }
+
+    public static int bytesToInt(byte[] bytes, int startIndex){
+        return (bytes[startIndex] << 24)
+                | (bytes[startIndex + 1] << 16)
+                | (bytes[startIndex + 2] << 8)
+                | bytes[startIndex + 3];
+    }
+
+    public static int bytesToInt(byte[] bytes){
+        return bytesToInt(bytes, 0);
+    }
+
+    public static float bytesToFloat(byte[] bytes, int startIndex){
+        return Float.intBitsToFloat(bytesToInt(bytes, startIndex));
+    }
+
+    public static float bytesToFloat(byte[] bytes){
+        return bytesToFloat(bytes, 0);
+    }
+
+    public static byte[] intToBytes(int value){
+        return new byte[] {
+                (byte) (value >> 24),
+                (byte) (value >> 16),
+                (byte) (value >> 8),
+                (byte) value };
+    }
+
+    public static byte[] floatToBytes(float value){
+        return intToBytes(Float.floatToIntBits(value));
     }
 }

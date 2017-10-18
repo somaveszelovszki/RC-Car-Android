@@ -71,13 +71,13 @@ public class GyroscopeControlFragment extends ControlFragment {
     }
 
     @Override
-    public Integer getSpeed() {
+    public float getSpeed() {
         return mAccelerationSeekBar.getProgress();
     }
 
     @Override
-    public Integer getSteeringAngle() {
+    public float getSteeringAngle() {
         //TODO
-        return null;
+        return 0.0f;
     }
 }

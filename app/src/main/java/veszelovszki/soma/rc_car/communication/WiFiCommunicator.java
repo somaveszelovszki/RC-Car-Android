@@ -1,11 +1,7 @@
 package veszelovszki.soma.rc_car.communication;
 
-import android.app.Activity;
 import android.content.Context;
-import android.net.wifi.WifiConfiguration;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
-import android.os.Handler;
 import android.util.Log;
 
 import java.io.BufferedInputStream;
@@ -17,29 +13,20 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
-import java.net.MalformedURLException;
 import java.net.Socket;
-import java.net.URI;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.util.List;
 
 import veszelovszki.soma.rc_car.common.Message;
-import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
 import veszelovszki.soma.rc_car.utils.Utils;
-
-
-
 
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017.07.19.
  */
 
-public class WiFiCommunicator extends Communicator {
+public class WiFiCommunicator implements Communicator {
 
     private static final String TAG = WiFiCommunicator.class.getCanonicalName();
 
@@ -60,23 +47,10 @@ public class WiFiCommunicator extends Communicator {
 
     private ReadThread mReadThread;
 
-    private Communicator.Listener mListener;
-
-    private static WiFiCommunicator mInstance;
-
-    public static void initialize(){
-        if (mInstance == null)
-            mInstance = new WiFiCommunicator();
-    }
-
-    public static WiFiCommunicator getInstance(Context context) {
-        mInstance.mListener = (Communicator.Listener) context;
-        mInstance.mContext = context;
-        return mInstance;
-    }
+    private Communicator.EventListener mListener;
 
     @Override
-    public void connect() {
+    public void connect(Object device) {
 
 //        WifiConfiguration conf = new WifiConfiguration();
 //        conf.SSID = "\"" + SSID + "\"";
@@ -198,17 +172,17 @@ public class WiFiCommunicator extends Communicator {
             while(!mCancelFlag.value) {
                 try {
                     mNumBytes = mInStream.read(mBuffer);
-                    mStrTempBuffer = new String(mBuffer, 0, mNumBytes);
-
-                    for (Integer i = 0; i < mStrTempBuffer.length(); ++i){
-                        Character c = mStrTempBuffer.charAt(i);
-
-                        if (c.equals(Message.END_CHAR)){
-                            mListener.onNewMessage(mMessageBuilder.toString());
-                            mMessageBuilder.setLength(0);
-                        } else
-                            mMessageBuilder.append(c);
-                    }
+//                    mStrTempBuffer = new String(mBuffer, 0, mNumBytes);
+//
+//                    for (Integer i = 0; i < mStrTempBuffer.length(); ++i){
+//                        Character c = mStrTempBuffer.charAt(i);
+//
+//                        if (c.equals(Message.END_CHAR)){
+//                            mListener.onNewMessage(mMessageBuilder.toString());
+//                            mMessageBuilder.setLength(0);
+//                        } else
+//                            mMessageBuilder.append(c);
+//                    }
 
                 } catch (IOException e) {
                     Log.d(TAG, "Input stream has been disconnected", e);
@@ -217,14 +191,6 @@ public class WiFiCommunicator extends Communicator {
             }
         }
     }
-
-
-
-
-
-
-
-
 
     private class TaskEsp extends AsyncTask<Void, Void, String> {
 

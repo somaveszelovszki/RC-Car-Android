@@ -31,7 +31,7 @@ public abstract class ControlFragment extends Fragment {
         }
     }
 
-    public abstract Integer getSpeed();
+    public abstract float getSpeed();
 
-    public abstract Integer getSteeringAngle();
+    public abstract float getSteeringAngle();
 }

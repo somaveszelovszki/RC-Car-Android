@@ -6,43 +6,47 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.os.Bundle;
 import android.util.Log;
+
+import java.util.Set;
+
+import veszelovszki.soma.rc_car.common.Message;
 import veszelovszki.soma.rc_car.communication.Communicator;
 import veszelovszki.soma.rc_car.communication.WiFiCommunicator;
 import veszelovszki.soma.rc_car.fragment.ControlFragment;
-import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.fragment.DeviceListFragment;
+import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
-import veszelovszki.soma.rc_car.common.Message;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
 import veszelovszki.soma.rc_car.utils.Utils.*;
-import veszelovszki.soma.rc_car.utils.Utils;
-import veszelovszki.soma.rc_car.view.AccelerationSeekBar;
-import veszelovszki.soma.rc_car.view.SteeringWheelView;
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016. 11. 13.
  */
 public class ControlActivity extends PreferenceAdaptActivity
         implements SteeringWheelControlFragment.ControlFragmentListener,
-        Communicator.Listener {
+        Communicator.EventListener,
+        DeviceListFragment.DeviceListFragmentListener {
 
     public static final String TAG = ControlActivity.class.getCanonicalName();
 
     /**
      * Time period of sending drive data (speed, rotation) to the micro-controller.
      */
-    private static final Integer DRIVE_DATA_SEND_PERIOD_MS = 200;
+    private static final Integer DRIVE_DATA_SEND_PERIOD_MS = 20;
 
     private Communicator mCommunicator;
     private SteeringWheelControlFragment mControlFragment;
+    private DeviceListFragment mDeviceListFragment;
+
+    private BluetoothDevice mDevice;
 
     private PrefManager mPrefManager;
 
@@ -50,6 +54,12 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     // TODO alter for WiFi state listener
     private final AdvancedBroadcastReceiver mConnectionStateReceiver = new AdvancedBroadcastReceiver() {
+        @Override
+        public void onError(Exception e) {
+            e.printStackTrace();
+            Snackbar.make(getContentView(), R.string.bluetooth_connection_setup_error, Snackbar.LENGTH_LONG).show();
+        }
+
         @Override
         public void onReceive(Context context, Intent intent) {
             String action = intent.getAction();
@@ -77,45 +87,25 @@ public class ControlActivity extends PreferenceAdaptActivity
 
             }
         }
-
-        @Override
-        public void onError(Exception e) {
-            e.printStackTrace();
-
-            runOnUiThread(new Runnable() {
-                @Override
-                public void run() {
-                    Snackbar.make(getContentView(), R.string.bluetooth_connection_setup_error, Snackbar.LENGTH_LONG).show();
-                }
-            });
-        }
     };
 
     /**
      * Initializes message send handler. Sends drive messages periodically with the Communicator.
      */
     final Handler mSendHandler = new Handler();
+
     final Runnable mSendMessage = new Runnable() {
         public void run() {
 
-            // converts AccelerationSeekBar's value to communicator speed -> [cm/sec]
-            Integer speed = Utils.map(mControlFragment.getSpeed(),
-                    AccelerationSeekBar.MIN_POS,
-                    AccelerationSeekBar.MAX_POS,
-                    Message.CODE.Speed.getMinValue(), Message.CODE.Speed.getMaxValue());
-
-            // maps SteeringWheel's value to communicator steering angle
-            Integer steeringAngle = Utils.map(mControlFragment.getSteeringAngle(),
-                    (-1) * SteeringWheelView.STEERING_WHEEL_MAX_ROTATION.intValue(),
-                    SteeringWheelView.STEERING_WHEEL_MAX_ROTATION.intValue(),
-                    Message.CODE.SteeringAngle.getMinValue(), Message.CODE.SteeringAngle.getMaxValue());
+            float speed = mControlFragment.getSpeed();
+            float steeringAngle = mControlFragment.getSteeringAngle();
 
             Log.d(TAG, "speed: " + speed);
             Log.d(TAG, "angle: " + steeringAngle);
 
             // sends messages
-            mCommunicator.send(Message.CODE.Speed, speed);
-            mCommunicator.send(Message.CODE.SteeringAngle, steeringAngle);
+            mCommunicator.send(new Message(Message.CODE.Speed, speed));
+            mCommunicator.send(new Message(Message.CODE.SteeringAngle, steeringAngle));
 
             mSendHandler.postDelayed(mSendMessage, DRIVE_DATA_SEND_PERIOD_MS);
         }
@@ -133,25 +123,63 @@ public class ControlActivity extends PreferenceAdaptActivity
 
         if (savedInstanceState == null) {
             mControlFragment = SteeringWheelControlFragment.newInstance();
+            mDeviceListFragment = DeviceListFragment.newInstance();
 
             try {
-                WiFiCommunicator.initialize();
-                mCommunicator = WiFiCommunicator.getInstance(this);
-                mCommunicator.connect();
+                //WiFiCommunicator.initialize();
+                //mCommunicator = WiFiCommunicator.getInstance(this);
+                //mCommunicator.connect();
+                mCommunicator = new BluetoothCommunicator(this, mConnectionStateReceiver);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
             }
 
-            getSupportFragmentManager().beginTransaction()
-                    .replace(R.id.fragment_container, mControlFragment, ControlFragment.TAG)
-                    .commit();
+            String carMacAddress = (String) mPrefManager.readPref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS);
+
+            // If car address is not known yet, opens list of paired devices.
+            // If it is known, connects to it and opens control fragment.
+            if (true || carMacAddress.equals("")) {
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
+                        .commit();
+            } else {
+                mDevice = ((BluetoothCommunicator)mCommunicator).getDevice(carMacAddress);
+                mCommunicator.connect(mDevice);
+            }
         }
     }
 
-    private void startMessageSending() {
-        mCommunicator.send(Message.CODE.DriveMode, mPrefManager.readPref(PrefManager.PREFERENCE.DRIVE_MODE));
+    @Override
+    public void searchDevices() {
+        Set<BluetoothDevice> pairedDevices = ((BluetoothCommunicator)mCommunicator).getPairedDevices();
+        mDeviceListFragment.setList(pairedDevices);
+    }
 
+    @Override
+    public void onDeviceSelected(BluetoothDevice device) {
+        mDevice = device;
+        mCommunicator.connect(device);
+    }
+
+    @Override
+    public void onError(Exception e) {
+        e.printStackTrace();
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Snackbar.make(getContentView(), R.string.bluetooth_connection_setup_error, Snackbar.LENGTH_LONG).show();
+
+                getSupportFragmentManager().beginTransaction()
+                        .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
+                        .commit();
+            }
+        });
+    }
+
+    private void startMessageSending() {
+        mCommunicator.send(new Message(Message.CODE.DriveMode, (Integer) mPrefManager.readPref(PrefManager.PREFERENCE.DRIVE_MODE)));
         mSendHandler.post(mSendMessage);
     }
 
@@ -236,15 +264,27 @@ public class ControlActivity extends PreferenceAdaptActivity
 
         cancelMessageSending();
 
-        if (mCommunicator != null) {
+        if (mCommunicator != null)
             mCommunicator.cancel();
-        }
 
         super.onDestroy();
     }
 
     @Override
     public void onCommunicatorConnected() {
+        // saves address in shared preferences
+        mPrefManager.writePref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS, mDevice.getAddress());
+
+        openControlFragment();
+    }
+
+    private void openControlFragment() {
+
+        // opens control fragment - adds this fragment to the back stack, so that user can navigate back
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.fragment_container, mControlFragment, SteeringWheelControlFragment.TAG)
+                .commit();
+
         startMessageSending();
     }
 
@@ -254,7 +294,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     }
 
     @Override
-    public void onNewMessage(String message) {
+    public void onNewMessage(Message message) {
         Log.d(TAG, "received: " + message);
     }
 }
