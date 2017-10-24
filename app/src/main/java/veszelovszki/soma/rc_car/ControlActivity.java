@@ -40,7 +40,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     /**
      * Time period of sending drive data (speed, rotation) to the micro-controller.
      */
-    private static final Integer DRIVE_DATA_SEND_PERIOD_MS = 20;
+    private static final Integer DRIVE_DATA_SEND_PERIOD_MS = 2000;
 
     private Communicator mCommunicator;
     private SteeringWheelControlFragment mControlFragment;
@@ -51,43 +51,6 @@ public class ControlActivity extends PreferenceAdaptActivity
     private PrefManager mPrefManager;
 
     private static final int PERMISSION_REQUEST_BLUETOOTH = 1;
-
-    // TODO alter for WiFi state listener
-    private final AdvancedBroadcastReceiver mConnectionStateReceiver = new AdvancedBroadcastReceiver() {
-        @Override
-        public void onError(Exception e) {
-            e.printStackTrace();
-            Snackbar.make(getContentView(), R.string.bluetooth_connection_setup_error, Snackbar.LENGTH_LONG).show();
-        }
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-
-            if (BluetoothDevice.ACTION_FOUND.equals(action)) {
-                //Device found - not handled
-            }
-            else if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
-                //Device is now connected
-                Log.d(TAG, "ACTION_ACL_CONNECTED");
-            }
-            else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED.equals(action)) {
-                //Done searching - not handled
-
-            }
-            else if (BluetoothDevice.ACTION_ACL_DISCONNECT_REQUESTED.equals(action)) {
-                //Device is about to disconnect - not handled
-            }
-            else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
-                //Device has disconnected
-                Log.d(TAG, "ACTION_ACL_DISCONNECTED");
-
-                cancelMessageSending();
-
-            }
-        }
-    };
 
     /**
      * Initializes message send handler. Sends drive messages periodically with the Communicator.
@@ -100,12 +63,12 @@ public class ControlActivity extends PreferenceAdaptActivity
             float speed = mControlFragment.getSpeed();
             float steeringAngle = mControlFragment.getSteeringAngle();
 
-            Log.d(TAG, "speed: " + speed);
-            Log.d(TAG, "angle: " + steeringAngle);
+            //Log.d(TAG, "speed: " + speed);
+            //Log.d(TAG, "angle: " + steeringAngle);
 
             // sends messages
             mCommunicator.send(new Message(Message.CODE.Speed, speed));
-            mCommunicator.send(new Message(Message.CODE.SteeringAngle, steeringAngle));
+            //mCommunicator.send(new Message(Message.CODE.SteeringAngle, steeringAngle));
 
             mSendHandler.postDelayed(mSendMessage, DRIVE_DATA_SEND_PERIOD_MS);
         }
@@ -129,7 +92,7 @@ public class ControlActivity extends PreferenceAdaptActivity
                 //WiFiCommunicator.initialize();
                 //mCommunicator = WiFiCommunicator.getInstance(this);
                 //mCommunicator.connect();
-                mCommunicator = new BluetoothCommunicator(this, mConnectionStateReceiver);
+                mCommunicator = new BluetoothCommunicator(this);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
@@ -185,6 +148,7 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     private void cancelMessageSending() {
         mSendHandler.removeCallbacks(mSendMessage);
+        mCommunicator.cancel();
     }
 
     /**
@@ -219,13 +183,10 @@ public class ControlActivity extends PreferenceAdaptActivity
         switch (requestCode) {
             case PERMISSION_REQUEST_BLUETOOTH:
                 // If request is cancelled, the result arrays are empty.
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 
-
-                } else {
+                } else
                     finish();
-                }
                 return;
 
             default:
@@ -248,34 +209,16 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == BluetoothCommunicator.REQUEST_ENABLE_BLUETOOTH) {
-            if (resultCode == RESULT_OK) {
-                // Request granted - bluetooth is turning on...
-            }
-            if (resultCode == RESULT_CANCELED) {
-                // Request denied by user, or an error was encountered while
-                // attempting to enable bluetooth
-            }
+        switch (requestCode){
+            case BluetoothCommunicator.REQUEST_ENABLE_BLUETOOTH:
+                switch (resultCode){
+                    case RESULT_OK:
+                        // Request granted - bluetooth is turning on...
+                    case RESULT_CANCELED:
+                        // Request denied by user, or an error was encountered while
+                        // attempting to enable bluetooth
+                }
         }
-    }
-
-    @Override
-    protected void onDestroy() {
-
-        cancelMessageSending();
-
-        if (mCommunicator != null)
-            mCommunicator.cancel();
-
-        super.onDestroy();
-    }
-
-    @Override
-    public void onCommunicatorConnected() {
-        // saves address in shared preferences
-        mPrefManager.writePref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS, mDevice.getAddress());
-
-        openControlFragment();
     }
 
     private void openControlFragment() {
@@ -289,6 +232,13 @@ public class ControlActivity extends PreferenceAdaptActivity
     }
 
     @Override
+    public void onCommunicatorConnected() {
+        // saves address in shared preferences
+        mPrefManager.writePref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS, mDevice.getAddress());
+        openControlFragment();
+    }
+
+    @Override
     public void onCommunicationError(Exception e) {
         e.printStackTrace();
     }
@@ -296,5 +246,16 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     public void onNewMessage(Message message) {
         Log.d(TAG, "received: " + message);
+    }
+
+    @Override
+    public void onCommunicatorDisconnected() {
+        cancelMessageSending();
+    }
+
+    @Override
+    protected void onDestroy() {
+        cancelMessageSending();
+        super.onDestroy();
     }
 }

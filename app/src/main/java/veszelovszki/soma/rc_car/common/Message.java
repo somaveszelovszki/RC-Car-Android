@@ -13,6 +13,7 @@ import java.util.List;
 public class Message {
 
     public enum CODE {
+        ACK(0),     // for acknowledgements
         Speed(1, -55.0f, 55.0f),           // [cm/sec] (>0 means FORWARD)
         SteeringAngle(2, (float) Math.toRadians(-60.0), (float) Math.toRadians(60.0)),  // [rad] (>0 means LEFT)
         DriveMode(3);    // values in Utils.DriveMode
@@ -52,12 +53,20 @@ public class Message {
         }
     };
 
+    public static final Integer LENGTH = 5;
+    private static final Integer DATA_LENGTH = 4;
+
+    //private static final ByteArray SEPARATOR = ByteArray.fromInteger(0x7fffffff);
+
     private CODE mCode;
     private ByteArray mValue;      // length = 4
 
 //    public static final Character END_CHAR = ';';
 //    public static final Character SEPARATOR_CHAR = ':';
 
+    public Message(){
+        mValue = new ByteArray(DATA_LENGTH);
+    }
 
     public Message(CODE code, int value) {
         mCode = code;
@@ -97,6 +106,13 @@ public class Message {
         return bytes;
     }
 
+    public static Message fromBytes(byte[] bytes){
+        Message message = new Message();
+        message.mCode = CODE.getByCode((int) bytes[0]);
+        System.arraycopy(bytes, 1, message.mValue.getValue(), 0, Message.DATA_LENGTH);
+        return message;
+    }
+
 //    /**
 //     * Parses Message from String object.
 //     * e.g. incoming String is "1:10"
@@ -122,7 +138,7 @@ public class Message {
      */
     @Override
     public String toString() {
-        return mCode.getCode().toString() + ": " + mValue.toString();
+        return String.valueOf(mCode.getCode()) + ": " + mValue.toString();
     }
 
 

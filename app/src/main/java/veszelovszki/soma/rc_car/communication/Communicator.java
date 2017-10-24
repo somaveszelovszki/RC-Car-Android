@@ -12,11 +12,12 @@ public interface Communicator {
         void onCommunicatorConnected();
         void onCommunicationError(Exception e);
         void onNewMessage(Message message);
+        void onCommunicatorDisconnected();
     }
 
     void connect(Object device);
 
-    Boolean send(Message msg);
+    void send(Message msg);
 
     void cancel();
 }

@@ -46,22 +46,18 @@ public class BluetoothCommunicator implements Communicator {
 
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
-    private AdvancedBroadcastReceiver mConnectionStateReceiver;
     private Communicator.EventListener mListener;
 
-    public BluetoothCommunicator(Context context, AdvancedBroadcastReceiver connectionStateReceiver) {
+    public BluetoothCommunicator(Context context) {
         mContext = context;
 
         mListener = (EventListener) context;
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        mConnectionStateReceiver = connectionStateReceiver;
-
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
-        mContext.registerReceiver(mConnectionStateReceiver, filter);
     }
 
     public BluetoothDevice getDevice(String address) {
@@ -76,7 +72,7 @@ public class BluetoothCommunicator implements Communicator {
     @Override
     public void connect(Object device) {
         String name = ((BluetoothDevice) device).getName();
-        Log.d(TAG, name != null ? name : "name is NULL");
+        Log.d(TAG, "Connecting to: " + (name != null ? name : "null"));
         setBluetooth(true);
         mDevice = (BluetoothDevice) device;
         mConnectTask = new ConnectTask();
@@ -84,14 +80,9 @@ public class BluetoothCommunicator implements Communicator {
     }
 
     @Override
-    public Boolean send(Message msg) {
-        return this.send(msg.getBytes());
-    }
-
-    private Boolean send(byte[] bytes) {
-        if (mConnectedThread != null)
-            return mConnectedThread.write(bytes);
-        return false;
+    public void send(Message msg) {
+        Log.d(TAG, "Sent: " + msg.toString());
+        mConnectedThread.write(msg.getBytes());
     }
 
     private Boolean isEnabled() {
@@ -111,38 +102,23 @@ public class BluetoothCommunicator implements Communicator {
 
     @Override
     public void cancel() {
-        mContext.unregisterReceiver(mConnectionStateReceiver);
         setBluetooth(false);
-
-        if (mConnectTask != null)
-            mConnectTask.cancel(true);
-
-        if (mConnectedThread != null)
-            mConnectedThread.interrupt();
+        mConnectTask.cancel(true);
+        mConnectedThread.interrupt();
     }
 
     private class ConnectTask extends AsyncTask<Void, Void, Boolean> {
 
-        private final BluetoothSocket mmSocket;
+        private BluetoothSocket mmSocket;
 
         ConnectTask() {
-            // Use a temporary object that is later assigned to mmSocket
-            // because mmSocket is final.
-            BluetoothSocket tmp;
-
             try {
-                tmp = mDevice.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
-                //final Method  m = device.getClass().getMethod("createInsecureRfcommSocketToServiceRecord", new Class[] { UUID.class });
-                //tmp = (BluetoothSocket) m.invoke(device, BLUETOOTH_SERIAL_BOARD_UUID);
+                mmSocket = mDevice.createRfcommSocketToServiceRecord(BLUETOOTH_SERIAL_BOARD_UUID);
+                Log.d(TAG, "Created socket!");
             } catch (Exception e) {
-                mConnectionStateReceiver.onError(e);
                 mmSocket = null;
-                return;
+                mListener.onCommunicationError(e);
             }
-
-            mmSocket = tmp;
-
-            Log.d(TAG, "Created socket!");
         }
 
         @Override
@@ -152,7 +128,7 @@ public class BluetoothCommunicator implements Communicator {
             mBluetoothAdapter.cancelDiscovery();
 
             if (mmSocket == null) {
-                mConnectionStateReceiver.onError(new Exception("Socket is null."));
+                mListener.onCommunicationError(new Exception("Socket is null."));
                 return false;
             }
 
@@ -168,17 +144,16 @@ public class BluetoothCommunicator implements Communicator {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
 
-                mConnectionStateReceiver.onError(connectException);
-
+                mListener.onCommunicationError(connectException);
                 return false;
             }
 
             Log.d(TAG, "Connected to the device through the socket!");
 
-            mListener.onCommunicatorConnected();
-
             mConnectedThread = new ConnectedThread(mmSocket);
             mConnectedThread.start();
+
+            mListener.onCommunicatorConnected();
 
             return true;
         }
@@ -190,56 +165,46 @@ public class BluetoothCommunicator implements Communicator {
     }
 
     private class ConnectedThread extends Thread {
-        private final InputStream mmInStream;
-        private final OutputStream mmOutStream;
-        private byte[] mmBuffer; // store for the stream
+        private InputStream mmInStream;
+        private OutputStream mmOutStream;
+        private byte[] mmBuffer;
 
         public ConnectedThread(BluetoothSocket socket) {
-            InputStream tmpIn = null;
-            OutputStream tmpOut = null;
-
-            // Get the input and output streams; using temp objects because
-            // member streams are final.
             try {
-                tmpIn = socket.getInputStream();
+                mmInStream = socket.getInputStream();
+                mmOutStream = socket.getOutputStream();
             } catch (IOException e) {
-                Log.e(TAG, "Error occurred when creating input stream", e);
+                mmInStream = null;
+                mmOutStream = null;
+                mListener.onCommunicationError(e);
             }
-            try {
-                tmpOut = socket.getOutputStream();
-            } catch (IOException e) {
-                Log.e(TAG, "Error occurred when creating output stream", e);
-            }
-
-            mmInStream = tmpIn;
-            mmOutStream = tmpOut;
         }
 
         public void run() {
-            mmBuffer = new byte[1024];
-            int numBytes; // bytes returned from read()
+            mmBuffer = new byte[Message.LENGTH];
 
             // Keep listening to the InputStream until an exception or an interrupt occurs.
             while (!this.isInterrupted()) {
                 try {
                     // Read from the InputStream.
-                    numBytes = mmInStream.read(mmBuffer);
-                    // TODO do something with message
-                } catch (IOException e) {
-                    Log.d(TAG, "Input stream was disconnected", e);
-                    break;
+                    if (mmInStream.available() >= Message.LENGTH){
+                        mmInStream.read(mmBuffer, 0, Message.LENGTH);
+
+                        Message message = Message.fromBytes(mmBuffer);
+                        Log.d(TAG, "new message:" + message.toString());
+                        //mListener.onNewMessage(Message.fromBytes(mmBuffer));
+                    }
+                } catch (Exception e) {
+                    mListener.onCommunicationError(e);
                 }
             }
         }
 
-        // Call this from the main activity to send data to the remote device.
-        private Boolean write(byte[] bytes) {
+        private void write(byte[] bytes) {
             try {
                 mmOutStream.write(bytes);
-                return true;
             } catch (IOException e) {
-                Log.e(TAG, "Error occurred when sending data", e);
-                return false;
+                mListener.onCommunicationError(e);
             }
         }
     }

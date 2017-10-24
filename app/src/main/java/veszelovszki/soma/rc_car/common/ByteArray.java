@@ -12,7 +12,9 @@ import veszelovszki.soma.rc_car.utils.Utils;
 public class ByteArray {
     private byte[] mValue;
 
-    public ByteArray(){}
+    public ByteArray(Integer length){
+        mValue = new byte[length];
+    }
 
     public ByteArray(byte[] value) {
         setValue(value);
@@ -44,5 +46,17 @@ public class ByteArray {
 
     public ByteArray concat(ByteArray other) {
         return new ByteArray(Utils.concatByteArrays(mValue, other.mValue));
+    }
+
+    @Override
+    public String toString(){
+        StringBuilder builder = new StringBuilder("[ ");
+        for (int i = 0; i < mValue.length - 1; ++i) {
+            builder.append(mValue[i]);
+            builder.append(", ");
+        }
+        builder.append(mValue[mValue.length - 1]);
+        builder.append(" ]");
+        return builder.toString();
     }
 }

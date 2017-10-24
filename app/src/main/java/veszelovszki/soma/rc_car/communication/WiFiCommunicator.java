@@ -100,7 +100,7 @@ public class WiFiCommunicator implements Communicator {
     }
 
     @Override
-    public synchronized Boolean send(Message msg) {
+    public synchronized void send(Message msg) {
 
 
         new Thread(new Runnable() {
@@ -148,10 +148,8 @@ public class WiFiCommunicator implements Communicator {
 
 
             Log.d(TAG, "sent: " + msg.toString());
-            return true;
-        } catch (NullPointerException e1){
-            //e1.printStackTrace();
-            return false;
+        } catch (NullPointerException e){
+            mListener.onCommunicationError(e);
         }
     }
 
