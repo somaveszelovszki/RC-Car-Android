@@ -53,92 +53,78 @@ public class Message {
         }
     };
 
-    public static final Integer LENGTH = 5;
-    private static final Integer DATA_LENGTH = 4;
+    public static final Integer SEPARATOR_LENGTH = 4;
+    public static final Integer CODE_LENGTH = 1;
+    public static final Integer DATA_LENGTH = 4;
+    public static final Integer LENGTH = SEPARATOR_LENGTH + CODE_LENGTH + DATA_LENGTH;
 
-    //private static final ByteArray SEPARATOR = ByteArray.fromInteger(0x7fffffff);
+    // equals Integer.MAX_VALUE and float NaN       (length = 4)
+    // forbidden as data value
+    public static final ByteArray SEPARATOR = ByteArray.fromInteger(0x7fffffff);
 
     private CODE mCode;
-    private ByteArray mValue;      // length = 4
-
-//    public static final Character END_CHAR = ';';
-//    public static final Character SEPARATOR_CHAR = ':';
+    private ByteArray mData;      // length = 4
 
     public Message(){
-        mValue = new ByteArray(DATA_LENGTH);
+        mData = new ByteArray(DATA_LENGTH);
     }
 
     public Message(CODE code, int value) {
         mCode = code;
-        mValue = ByteArray.fromInteger(value);
+        mData = ByteArray.fromInteger(value);
     }
 
     public Message(CODE code, float value) {
         mCode = code;
-        mValue = ByteArray.fromFloat(value);
+        mData = ByteArray.fromFloat(value);
     }
 
     CODE getCode() {
         return mCode;
     }
 
-    public Integer getValueAsInt() {
-        return mValue.asInteger();
+    public Integer getDataAsInt() {
+        return mData.asInteger();
     }
 
-    public Float getValueAsFloat() {
-        return mValue.asFloat();
+    public Float getDataAsFloat() {
+        return mData.asFloat();
     }
 
-    public void setValue(Integer value){
-        mValue = ByteArray.fromInteger(value);
+    public void setData(Integer data){
+        mData = ByteArray.fromInteger(data);
     }
 
-    public void setValue(Float value){
-        mValue = ByteArray.fromFloat(value);
+    public void setData(Float data){
+        mData = ByteArray.fromFloat(data);
     }
 
     public byte[] getBytes(){
-        byte[] bytes = new byte[5];
-        bytes[0] = (byte) (int) mCode.getCode();
-        for (int i = 0; i < 4; ++i)
-            bytes[i + 1] = mValue.getValue()[i];
+        byte[] bytes = new byte[LENGTH];
+
+        // adds separator
+        System.arraycopy(SEPARATOR.getValue(), 0, bytes, 0, SEPARATOR_LENGTH);
+
+        // adds code
+        bytes[SEPARATOR_LENGTH] = (byte) (int) mCode.getCode();
+
+        // adds data
+        System.arraycopy(mData.getValue(), 0, bytes, SEPARATOR_LENGTH + CODE_LENGTH, DATA_LENGTH);
+
         return bytes;
     }
 
     public static Message fromBytes(byte[] bytes){
         Message message = new Message();
-        message.mCode = CODE.getByCode((int) bytes[0]);
-        System.arraycopy(bytes, 1, message.mValue.getValue(), 0, Message.DATA_LENGTH);
+        // skips SEPARATOR
+        message.mCode = CODE.getByCode((int) bytes[SEPARATOR_LENGTH]);
+        System.arraycopy(bytes, SEPARATOR_LENGTH + CODE_LENGTH, message.mData.getValue(), 0, Message.DATA_LENGTH);
         return message;
     }
 
-//    /**
-//     * Parses Message from String object.
-//     * e.g. incoming String is "1:10"
-//     * output will be:
-//     *    Message { code=1 and value=10 }
-//     */
-//    public Message fromString(String msgString) {
-//
-//        // finds separator in string (separates key from value)
-//        Integer separatorIndex = msgString.indexOf(SEPARATOR_CHAR);
-//
-//        // code is before separator
-//        Integer code = Integer.parseInt(msgString.substring(0, separatorIndex));
-//
-//        // value is after separator
-//        String value = msgString.substring(separatorIndex + 1);
-//
-//        return new Message(CODE.getByCode(code), value);
-//    }
-
-    /**
-     * Only for DEBUGGING!
-     */
     @Override
     public String toString() {
-        return String.valueOf(mCode.getCode()) + ": " + mValue.toString();
+        return String.valueOf(mCode.getCode()) + ": " + mData.toString();
     }
 
 

@@ -16,8 +16,12 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
+import veszelovszki.soma.rc_car.common.ByteArray;
 import veszelovszki.soma.rc_car.common.Message;
+import veszelovszki.soma.rc_car.utils.Utils;
 import veszelovszki.soma.rc_car.utils.Utils.*;
+
+import static java.lang.Math.min;
 
 /**
  * Handles Bluetooth communications. Sends and receives data.
@@ -150,7 +154,7 @@ public class BluetoothCommunicator implements Communicator {
 
             Log.d(TAG, "Connected to the device through the socket!");
 
-            mConnectedThread = new ConnectedThread(mmSocket);
+            mConnectedThread = new ConnectedThread(mmSocket, mListener);
             mConnectedThread.start();
 
             mListener.onCommunicatorConnected();
@@ -164,12 +168,22 @@ public class BluetoothCommunicator implements Communicator {
         }
     }
 
-    private class ConnectedThread extends Thread {
+    private static class ConnectedThread extends Thread {
         private InputStream mmInStream;
         private OutputStream mmOutStream;
-        private byte[] mmBuffer;
+        private ByteArray mmRecvBuffer = new ByteArray(Message.LENGTH);
+        private int mmRecvByteIdx = 0;
 
-        public ConnectedThread(BluetoothSocket socket) {
+        private Communicator.EventListener mListener;
+
+        private enum RecvState {
+            READ_SEPARATOR, READ_CODE, READ_DATA
+        }
+
+        private RecvState mmRecvState = RecvState.READ_SEPARATOR;
+
+        public ConnectedThread(BluetoothSocket socket, Communicator.EventListener listener) {
+            mListener = listener;
             try {
                 mmInStream = socket.getInputStream();
                 mmOutStream = socket.getOutputStream();
@@ -181,19 +195,66 @@ public class BluetoothCommunicator implements Communicator {
         }
 
         public void run() {
-            mmBuffer = new byte[Message.LENGTH];
-
             // Keep listening to the InputStream until an exception or an interrupt occurs.
             while (!this.isInterrupted()) {
                 try {
-                    // Read from the InputStream.
-                    if (mmInStream.available() >= Message.LENGTH){
-                        mmInStream.read(mmBuffer, 0, Message.LENGTH);
+                    Integer availableBytesNum = mmInStream.available();
+                    if (availableBytesNum > 0) {
+                        Integer bytesNum = min(availableBytesNum, Message.LENGTH - mmRecvByteIdx);
 
-                        Message message = Message.fromBytes(mmBuffer);
-                        Log.d(TAG, "new message:" + message.toString());
-                        //mListener.onNewMessage(Message.fromBytes(mmBuffer));
+
+//                        mmInStream.read(mmRecvBuffer.getValue(), mmRecvByteIdx, bytesNum);
+//                        mmRecvByteIdx += bytesNum;
+//
+//                        // if SEPARATOR is not at the beginning of the byte array, shifts it
+//                        int sepIndex = mmRecvBuffer.indexOf(Message.SEPARATOR);
+//                        Log.d(TAG, "separator:" + Message.SEPARATOR + " -> as byte array: " + ByteArray.fromInteger(Message.SEPARATOR).toString());
+//                        Log.d(TAG, "buffer:" + mmRecvBuffer.toString());
+//                        Log.d(TAG, "sepIndex:" + sepIndex);
+//                        if (sepIndex > 0) {
+//                            mmRecvBuffer.shiftBytesLeft(sepIndex);
+//                            mmRecvByteIdx -= sepIndex;
+//                        } else if (sepIndex == -1)
+//                            mmRecvByteIdx = 0;
+
+                        for (int i = 0; i < bytesNum; ++i) {
+                            byte b = (byte) mmInStream.read();
+                            switch (mmRecvState) {
+                                case READ_SEPARATOR:
+                                    if (b == Message.SEPARATOR.get(mmRecvByteIdx)) {
+                                    mmRecvBuffer.set(mmRecvByteIdx++, b);
+                                    if (mmRecvByteIdx == Message.SEPARATOR_LENGTH)
+                                        mmRecvState = RecvState.READ_CODE;
+                                } else
+                                mmRecvByteIdx = 0;
+                                break;
+                                case READ_CODE:
+                                    mmRecvBuffer.set(mmRecvByteIdx++, b);
+                                    if (mmRecvByteIdx == Message.SEPARATOR_LENGTH + Message.CODE_LENGTH)
+                                        mmRecvState = RecvState.READ_DATA;
+                                    break;
+                                case READ_DATA:
+                                    mmRecvBuffer.set(mmRecvByteIdx++, b);
+                                    if (mmRecvByteIdx == Message.LENGTH) {
+                                        mmRecvByteIdx = 0;
+                                        mmRecvState = RecvState.READ_SEPARATOR;
+
+                                        // message received
+                                        Message message = Message.fromBytes(mmRecvBuffer.getValue());
+                                        Log.d(TAG, "new message:" + message.toString());
+                                        mListener.onNewMessage(message);
+                                    }
+                                    break;
+                            }
+                        }
                     }
+
+//                    if (mmRecvByteIdx == Message.LENGTH) {
+//                        Message message = Message.fromBytes(mmRecvBuffer.getValue());
+//                        Log.d(TAG, "new message:" + message.toString());
+//                        mListener.onNewMessage(message);
+//                    }
+
                 } catch (Exception e) {
                     mListener.onCommunicationError(e);
                 }

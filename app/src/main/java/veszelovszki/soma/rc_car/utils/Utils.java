@@ -289,10 +289,10 @@ public class Utils {
     }
 
     public static int bytesToInt(byte[] bytes, int startIndex){
-        return (bytes[startIndex] << 24)
-                | (bytes[startIndex + 1] << 16)
-                | (bytes[startIndex + 2] << 8)
-                | bytes[startIndex + 3];
+        return (((int) bytes[startIndex]) << 24)
+                | ((int) (bytes[startIndex + 1]) << 16)
+                | ((int) (bytes[startIndex + 2]) << 8)
+                | ((int) bytes[startIndex + 3]);
     }
 
     public static int bytesToInt(byte[] bytes){

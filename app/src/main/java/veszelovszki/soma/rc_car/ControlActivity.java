@@ -245,7 +245,7 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     @Override
     public void onNewMessage(Message message) {
-        Log.d(TAG, "received: " + message);
+        // TODO handle message
     }
 
     @Override

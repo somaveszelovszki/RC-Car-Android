@@ -4,8 +4,6 @@ package veszelovszki.soma.rc_car.common;
 import veszelovszki.soma.rc_car.utils.Utils;
 
 /**
- * Message object describes msg data - code and value.
- * Codes match Arduino project's msg codes.
  * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 09.
  */
 
@@ -28,6 +26,14 @@ public class ByteArray {
         mValue = value;
     }
 
+    public byte get(int index) {
+        return mValue[index];
+    }
+
+    public void set(int index, byte value) {
+        mValue[index] = value;
+    }
+
     public static ByteArray fromInteger(int value) {
         return new ByteArray(Utils.intToBytes(value));
     }
@@ -46,6 +52,30 @@ public class ByteArray {
 
     public ByteArray concat(ByteArray other) {
         return new ByteArray(Utils.concatByteArrays(mValue, other.mValue));
+    }
+
+    public void shiftBytesLeft(int byteShift) {
+        for (int i = mValue.length - 1; i >= byteShift; --i)
+            mValue[i] = mValue[i - byteShift];
+
+        for (int i = byteShift - 1; i >= 0; --i)
+            mValue[i] = (byte)0;
+    }
+
+    public void shiftBytesRight(int byteShift) {
+        for (int i = 0; i < mValue.length - byteShift; ++i)
+            mValue[i] = mValue[i + byteShift];
+
+        for (int i = byteShift; i < mValue.length; ++i)
+            mValue[i] = (byte)0;
+    }
+
+    public Integer indexOf(Integer value) {
+        Integer index = -1;
+        for (Integer i = 0; index == -1 && i < mValue.length - 4; ++i)
+            if (Utils.bytesToInt(mValue, i) == value)
+                index = i;
+        return index;
     }
 
     @Override
