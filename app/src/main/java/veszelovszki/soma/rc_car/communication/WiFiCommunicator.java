@@ -18,7 +18,6 @@ import java.net.InetAddress;
 import java.net.Socket;
 import java.net.URL;
 
-import veszelovszki.soma.rc_car.common.Message;
 import veszelovszki.soma.rc_car.utils.Utils;
 
 
@@ -26,6 +25,8 @@ import veszelovszki.soma.rc_car.utils.Utils;
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017.07.19.
  */
 
+
+// TODO finish the implementation of this class -> i.e.: NOT WORKING AT ALL
 public class WiFiCommunicator implements Communicator {
 
     private static final String TAG = WiFiCommunicator.class.getCanonicalName();
@@ -48,6 +49,11 @@ public class WiFiCommunicator implements Communicator {
     private ReadThread mReadThread;
 
     private Communicator.EventListener mListener;
+
+    @Override
+    public void updateContext(Context context) {
+
+    }
 
     @Override
     public void connect(Object device) {

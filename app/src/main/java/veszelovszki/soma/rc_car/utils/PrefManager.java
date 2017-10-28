@@ -106,6 +106,7 @@ public class PrefManager {
 
         FIRST_START_CONTROL("first_start_control", Boolean.class, true),
         FIRST_START_PROFILE("first_start_profile", Boolean.class, true),
+        FIRST_START_DISPLAY_ENVIRONMENT("first_start_display_environment", Boolean.class, true),
         FIRST_START_SETTINGS("first_start_settings", Boolean.class, true);
 
         private String key;

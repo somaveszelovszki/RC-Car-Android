@@ -16,10 +16,7 @@ import java.io.OutputStream;
 import java.util.Set;
 import java.util.UUID;
 
-import veszelovszki.soma.rc_car.common.ByteArray;
-import veszelovszki.soma.rc_car.common.Message;
-import veszelovszki.soma.rc_car.utils.Utils;
-import veszelovszki.soma.rc_car.utils.Utils.*;
+import veszelovszki.soma.rc_car.utils.ByteArray;
 
 import static java.lang.Math.min;
 
@@ -52,16 +49,20 @@ public class BluetoothCommunicator implements Communicator {
 
     private Communicator.EventListener mListener;
 
-    public BluetoothCommunicator(Context context) {
-        mContext = context;
+    private static BluetoothCommunicator __instance;
 
-        mListener = (EventListener) context;
-
+    private BluetoothCommunicator() {
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        //IntentFilter filter = new IntentFilter();
+        //filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        //filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+    }
 
-        IntentFilter filter = new IntentFilter();
-        filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
-        filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+    public static BluetoothCommunicator getInstance(Context context) {
+        if (__instance == null) __instance = new BluetoothCommunicator();
+
+        __instance.updateContext(context);
+        return __instance;
     }
 
     public BluetoothDevice getDevice(String address) {
@@ -71,6 +72,12 @@ public class BluetoothCommunicator implements Communicator {
     public Set<BluetoothDevice> getPairedDevices() {
         setBluetooth(true);
         return mBluetoothAdapter.getBondedDevices();
+    }
+
+    @Override
+    public void updateContext(Context context) {
+        mContext = context;
+        mListener = (EventListener) context;
     }
 
     @Override

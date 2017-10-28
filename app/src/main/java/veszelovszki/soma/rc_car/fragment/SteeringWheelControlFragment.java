@@ -6,7 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import veszelovszki.soma.rc_car.R;
-import veszelovszki.soma.rc_car.common.Message;
+import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.utils.Utils;
 import veszelovszki.soma.rc_car.view.AccelerationSeekBar;
 import veszelovszki.soma.rc_car.view.SteeringWheelView;
@@ -40,7 +40,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
         return Utils.map((float) mAccelerationSeekBar.getProgress(),
                 (float) AccelerationSeekBar.MIN_POS,
                 (float) AccelerationSeekBar.MAX_POS,
-                (float) Message.CODE.Speed.getMinValue(), (float) Message.CODE.Speed.getMaxValue());
+                (float) Message.CODE.Speed.getMinDataValue(), (float) Message.CODE.Speed.getMaxDataValue());
     }
 
     @Override
@@ -48,7 +48,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
         return Utils.map(mSteeringWheelView.getWheelRotation(),
                 (-1) * SteeringWheelView.STEERING_WHEEL_MAX_ROTATION,
                 SteeringWheelView.STEERING_WHEEL_MAX_ROTATION,
-                (float) Message.CODE.SteeringAngle.getMinValue(), (float) Message.CODE.SteeringAngle.getMaxValue());
+                (float) Message.CODE.SteeringAngle.getMinDataValue(), (float) Message.CODE.SteeringAngle.getMaxDataValue());
     }
 }
 

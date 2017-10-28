@@ -3,7 +3,6 @@ package veszelovszki.soma.rc_car.utils;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.res.AssetManager;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -17,11 +16,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigDecimal;
-import java.util.Comparator;
 import java.util.Locale;
 
-import veszelovszki.soma.rc_car.common.ByteArray;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 
 /**
@@ -104,6 +102,9 @@ public class Utils {
             throw new IllegalArgumentException();
         }
     }
+
+    public static final byte SIGNED_BYTE_MIN_VALUE = (byte) 0b11111111;
+    public static final byte SIGNED_BYTE_MAX_VALUE = (byte) 0b01111111;
 
     public static final String TAG = Utils.class.getCanonicalName();
 
@@ -245,7 +246,15 @@ public class Utils {
         return resizeDrawable(context, image, sizeX, sizeY);
     }
 
-    public static Integer map(@NonNull Integer value, Integer fromLow, Integer fromHigh, Integer toLow, Integer toHigh) {
+    public static int incarcerate(int value, int boundaryLow, int boundaryHigh) {
+        return min(max(value, boundaryLow), boundaryHigh);
+    }
+
+    public static float incarcerate(float value, float boundaryLow, float boundaryHigh) {
+        return min(max(value, boundaryLow), boundaryHigh);
+    }
+
+    public static int map(int value, int fromLow, int fromHigh, int toLow, int toHigh) {
 
         if (value <= fromLow)
             return toLow;
@@ -256,7 +265,7 @@ public class Utils {
         return toLow + (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow);
     }
 
-    public static Float map(@NonNull Float value, Float fromLow, Float fromHigh, Float toLow, Float toHigh) {
+    public static float map(float value, float fromLow, float fromHigh, float toLow, float toHigh) {
 
         if (value <= fromLow)
             return toLow;

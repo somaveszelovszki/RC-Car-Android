@@ -6,6 +6,7 @@ import android.os.Bundle;
 import java.util.ArrayList;
 import java.util.List;
 
+import veszelovszki.soma.rc_car.DisplayEnvironmentActivity;
 import veszelovszki.soma.rc_car.ProfileActivity;
 import veszelovszki.soma.rc_car.R;
 import veszelovszki.soma.rc_car.SettingsActivity;
@@ -40,18 +41,27 @@ public class NavigationDrawerListAdapter extends IconListAdapter<NavigationDrawe
 
         List<NavigationDrawerListItem> items = new ArrayList<>();
 
-        final Bundle profileExtras = new Bundle();
+//        final Bundle profileExtras = new Bundle();
+//        items.add(new NavigationDrawerListItem(
+//                getContext(), 1, getContext().getString(R.string.my_profile), R.drawable.ic_account_circle, new Utils.Callback() {
+//            @Override
+//            public void onEvent() {
+//                activity.startActivity(ProfileActivity.class, profileExtras);
+//            }
+//        }));
+
+        final Bundle displayEnvironmentExtras = new Bundle();
         items.add(new NavigationDrawerListItem(
-                getContext(), 1, getContext().getString(R.string.my_profile), R.drawable.ic_account_circle, new Utils.Callback() {
+                getContext(), 2, getContext().getString(R.string.car_environment), R.drawable.ic_blur_on, new Utils.Callback() {
             @Override
             public void onEvent() {
-                activity.startActivity(ProfileActivity.class, profileExtras);
+                activity.startActivity(DisplayEnvironmentActivity.class, displayEnvironmentExtras);
             }
         }));
 
         final Bundle settingsExtras = new Bundle();
         items.add(new NavigationDrawerListItem(
-                getContext(), 2, getContext().getString(R.string.settings), R.drawable.ic_settings, new Utils.Callback() {
+                getContext(), 3, getContext().getString(R.string.settings), R.drawable.ic_settings, new Utils.Callback() {
             @Override
             public void onEvent() {
                 activity.startActivity(SettingsActivity.class, settingsExtras);

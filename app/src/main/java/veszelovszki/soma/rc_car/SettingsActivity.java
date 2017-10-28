@@ -60,21 +60,8 @@ public class SettingsActivity extends PreferenceAdaptActivity
         }
     }
 
-    /**
-     * Checks for permissions - called during onCreate().
-     */
-    protected void checkPermissions() {
-
-    }
-
-    /**
-     * Method is called when activity runs for the first time.
-     */
-    public void onFirstRun() {
-
-    }
-
-    public PrefManager.PREFERENCE getFirstRunPreference() {
+    @Override
+    public PrefManager.PREFERENCE getFirstStartPreference() {
         return PrefManager.PREFERENCE.FIRST_START_SETTINGS;
     }
 

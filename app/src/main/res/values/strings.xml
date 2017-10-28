@@ -18,5 +18,8 @@
     <string name="drive_mode">Drive mode</string>
     <string name="select_drive_mode">Select drive mode</string>
     <string name="bluetooth_connection_setup_error">Could not set up Bluetooth connection.</string>
+    <string name="car_environment">Car environment</string>
+    <string name="action_open_drawer">Open navigation drawer</string>
+    <string name="action_close_drawer">Close navigation drawer</string>
 
 </resources>

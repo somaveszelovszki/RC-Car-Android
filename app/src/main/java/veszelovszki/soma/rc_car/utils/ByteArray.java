@@ -1,7 +1,5 @@
-package veszelovszki.soma.rc_car.common;
+package veszelovszki.soma.rc_car.utils;
 
-
-import veszelovszki.soma.rc_car.utils.Utils;
 
 /**
  * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 09.
@@ -52,6 +50,13 @@ public class ByteArray {
 
     public ByteArray concat(ByteArray other) {
         return new ByteArray(Utils.concatByteArrays(mValue, other.mValue));
+    }
+
+    public ByteArray subArray(int startIndex, int length) {
+        ByteArray result = new ByteArray(length);
+        for (int i = 0; i < length; ++i)
+            result.set(i, this.get(startIndex + i));
+        return result;
     }
 
     public void shiftBytesLeft(int byteShift) {

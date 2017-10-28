@@ -1,26 +1,38 @@
 package veszelovszki.soma.rc_car.utils;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.support.annotation.LayoutRes;
+import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
+import android.support.design.widget.NavigationView;
 import android.support.design.widget.Snackbar;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.ActionBarDrawerToggle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
+import android.widget.FrameLayout;
 import android.widget.ListView;
 
 import java.util.Locale;
 
+import veszelovszki.soma.rc_car.DisplayEnvironmentActivity;
 import veszelovszki.soma.rc_car.R;
+import veszelovszki.soma.rc_car.SettingsActivity;
 import veszelovszki.soma.rc_car.adapter.NavigationDrawerListAdapter;
+import veszelovszki.soma.rc_car.fragment.DisplayEnvironmentFragment;
 
 /**
  * Parent class for all activities in the project.
@@ -31,43 +43,105 @@ import veszelovszki.soma.rc_car.adapter.NavigationDrawerListAdapter;
  */
 public abstract class PreferenceAdaptActivity extends AppCompatActivity {
 
+    private static final String TAG = PreferenceAdaptActivity.class.getCanonicalName();
+
+    protected Boolean mTwoPaneMode;
     private Boolean mIsNavigationDrawerEnabled = false;
 
-    protected DrawerLayout mNavigationDrawerLayout = null;
-    protected ListView mNavigationDrawerListView = null;
+    private boolean mIsFloatingActionButtonEnabled = false;
+    protected FloatingActionButton mFloatingActionButton;
+
+    private DrawerLayout mNavigationDrawerLayout = null;
+    private NavigationView mNavigationView = null;
+    private ActionBarDrawerToggle mNavigationDrawerToggle;
+
+    protected Menu mOptionsMenu;
 
     protected PrefManager mPrefManager;
     //protected DatabaseManager mDbManager;
 
-    protected String TAG;
+    protected static Long APP_LANGUAGE_ID;
+    public static final String EXTRA_LANGUAGE_ID = "language_id";
+    protected static final String EXTRA_IS_RECREATED = "is_recreated";
+
+    private Boolean mIsFirstStart;
+    private Boolean mIsRecreated;
+
+    public enum State {
+        CREATED, RESUMED, PAUSED
+    };
+
+    private State mState;
+
+    public State getState() {
+        return mState;
+    }
+
+    public void setState(State state) {
+        mState = state;
+    }
+
+    protected Boolean isRecreated(){
+        return mIsRecreated;
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
+        //mDbManager = DatabaseManager.newInstance(this);
         mPrefManager = new PrefManager(this);
 
-        this.checkPermissions();
+        super.onCreate(savedInstanceState);
+
+        mState = State.CREATED;
+
+        mTwoPaneMode = false;//getResources().getBoolean(R.bool.two_pane_mode);
+        Log.d(TAG, (mTwoPaneMode ? "2" : "1") + "-pane mode");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        mState = State.RESUMED;
+
+        Intent intent = getIntent();
+        if (intent != null) {
+            mIsRecreated = intent.getBooleanExtra(EXTRA_IS_RECREATED, false);
+            intent.putExtra(EXTRA_IS_RECREATED, false);
+        }
+
+        updateFloatingActionButton();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-
-        MenuInflater inflater = getMenuInflater();
-
-        return true;
+        mOptionsMenu = menu;
+        return false;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
 
+        // Pass the event to ActionBarDrawerToggle, if it returns
+        // true, then it has handled the app icon touch event
+        if (mIsNavigationDrawerEnabled && mNavigationDrawerToggle.onOptionsItemSelected(item)) return true;
+
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+
+            case R.id.action_show_car_environment:
+                startActivity(DisplayEnvironmentActivity.class);
+                return true;
+
+            case R.id.action_settings:
+                startActivity(SettingsActivity.class);
+                return true;
 
             default:
                 // If we got here, the user's action was not recognized.
                 // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
-
         }
     }
 
@@ -75,40 +149,138 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
     public void setContentView(@LayoutRes int layoutResID) {
         super.setContentView(layoutResID);
 
-        // initializes navigation navigation_drawer
-        if (mIsNavigationDrawerEnabled) {
-            mNavigationDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
-            mNavigationDrawerListView = (ListView) mNavigationDrawerLayout.findViewById(android.R.id.list);
+        if (mIsNavigationDrawerEnabled)
+            initializeNavigationDrawer();
 
-            mNavigationDrawerListView.setAdapter(new NavigationDrawerListAdapter(this));
-            mNavigationDrawerListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    NavigationDrawerListItem item = (NavigationDrawerListItem) mNavigationDrawerListView.getAdapter().getItem(position);
+//        if (mIsFloatingActionButtonEnabled)
+//            initializeFloatingActionButton();
+        checkForFirstRun();
 
-                    onDrawerItemClick(item);
-                }
-            });
+    }
+
+    private void initializeFloatingActionButton() {
+        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        inflater.inflate(R.layout.floating_action_button, getRootView());
+        mFloatingActionButton = (FloatingActionButton) findViewById(R.id.floating_action_button);
+    }
+
+    protected ViewGroup getRootView() {
+        return (ViewGroup) getWindow().getDecorView().findViewById(android.R.id.content);
+    }
+
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
         }
+        return result;
+    }
 
-        this.checkForFirstRun();
+    protected void handleIntent(Intent intent){}
 
+    @Override
+    protected void onPause() {
+        mState = State.PAUSED;
+        super.onPause();
     }
 
     public void setNavigationDrawerEnabled(Boolean isNavigationDrawerEnabled) {
         mIsNavigationDrawerEnabled = isNavigationDrawerEnabled;
+        updateNavigationDrawer();
     }
 
     public Boolean isNavigationDrawerEnabled() {
         return mIsNavigationDrawerEnabled;
     }
 
-    /**
-     * Handles navigation navigation_drawer item click.
-     * @param item
-     */
-    public void onDrawerItemClick(NavigationDrawerListItem item) {
-        item.getCallback().onEvent();
+    public void setFloatingActionButtonEnabled(Boolean isFloatingActionButtonEnabled) {
+        mIsFloatingActionButtonEnabled = isFloatingActionButtonEnabled;
+        updateFloatingActionButton();
+    }
+
+    public boolean isFloatingActionButtonEnabled() {
+        return mIsFloatingActionButtonEnabled;
+    }
+
+    private void updateFloatingActionButton() {
+        if (mFloatingActionButton != null) {
+            mFloatingActionButton.setVisibility(mIsFloatingActionButtonEnabled ? View.VISIBLE : View.GONE);
+        } else if (mIsFloatingActionButtonEnabled)
+            initializeFloatingActionButton();
+    }
+
+    private void initializeNavigationDrawer() {
+        LayoutInflater inflater = (LayoutInflater) getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+        mNavigationDrawerLayout = (DrawerLayout) inflater.inflate(R.layout.navigation_drawer, null);
+
+        mNavigationView = (NavigationView) mNavigationDrawerLayout.findViewById(R.id.navigation_view);
+        mNavigationView.setItemIconTintList(null);
+
+        mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                closeDrawer();
+                return onOptionsItemSelected(item);
+            }
+        });
+
+        // ActionBarDrawerToggle ties together the the proper interactions
+        // between the sliding drawer and the action bar app icon
+        mNavigationDrawerToggle = new ActionBarDrawerToggle(
+                this,                  /* host Activity */
+                mNavigationDrawerLayout,         /* DrawerLayout object */
+                R.string.action_open_drawer,  /* "open drawer" description for accessibility */
+                R.string.action_close_drawer  /* "close drawer" description for accessibility */
+        ) {
+            public void onDrawerClosed(View view) {
+                //supportInvalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+
+            public void onDrawerOpened(View drawerView) {
+                //supportInvalidateOptionsMenu(); // creates call to onPrepareOptionsMenu()
+            }
+        };
+        mNavigationDrawerLayout.addDrawerListener(mNavigationDrawerToggle);
+
+        if (mIsNavigationDrawerEnabled) {
+            addNavigationDrawerToView();
+            updateNavigationDrawer();
+
+            ActionBar actionBar = getSupportActionBar();
+            if (actionBar != null) {
+                actionBar.setDisplayHomeAsUpEnabled(true);
+                actionBar.setHomeButtonEnabled(true);
+            }
+        }
+    }
+
+    private void addNavigationDrawerToView() {
+        ViewGroup decor = (ViewGroup) getWindow().getDecorView();
+
+        // HACK: "steal" the first child of decor view
+        View child = decor.getChildAt(0);
+        decor.removeView(child);
+        FrameLayout container = (FrameLayout) mNavigationDrawerLayout.findViewById(R.id.content_frame);
+        container.addView(child, 0);
+        mNavigationDrawerLayout.findViewById(R.id.drawer_layout).setPadding(0, getStatusBarHeight(), 0, 0);
+        decor.addView(mNavigationDrawerLayout);
+    }
+
+    private void updateNavigationDrawer() {
+
+        if (mNavigationDrawerLayout != null && mNavigationDrawerToggle != null) {
+            // drawer has been initialized, updates properties
+            mNavigationDrawerLayout.setVisibility(mIsNavigationDrawerEnabled ? View.VISIBLE : View.GONE);
+            mNavigationDrawerLayout.setDrawerLockMode(mIsNavigationDrawerEnabled ?
+                    DrawerLayout.LOCK_MODE_UNLOCKED : DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+
+            mNavigationDrawerToggle.onDrawerStateChanged(mIsNavigationDrawerEnabled ?
+                    DrawerLayout.LOCK_MODE_UNLOCKED : DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+            mNavigationDrawerToggle.setDrawerIndicatorEnabled(mIsNavigationDrawerEnabled);
+            mNavigationDrawerToggle.syncState();
+        } else if (mIsNavigationDrawerEnabled)
+            initializeNavigationDrawer();
     }
 
     public void closeDrawer() {
@@ -116,37 +288,27 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
             mNavigationDrawerLayout.closeDrawer(Gravity.LEFT);
     }
 
-    protected void handleIntent(Intent intent){}
-
-    /**
-     * Checks if activity is running for the first time, and - if yes - calls method onFirstRun().
-     */
-    protected void checkForFirstRun() {
-
-        PrefManager.PREFERENCE firstRunPref = this.getFirstRunPreference();
-
-        // reads value from preferences
-        if ((Boolean) mPrefManager.readPref(firstRunPref)) {
-            // it's the first run of the activity
-            onFirstRun();
-
-            // write false value to preferences
-            // -> from now on it is not the first time for the activity to run
-            mPrefManager.writePref(firstRunPref, false);
-        }
+    public Boolean isFirstStart() {
+        return mIsFirstStart;
     }
 
     /**
-     * Checks for permissions - called during onCreate().
+     * Checks if activity is running for the first time, and - if yes - calls method onFirstStart().
      */
-    protected abstract void checkPermissions();
+    protected void checkForFirstRun() {
 
-    /**
-     * Method is called when activity runs for the first time - must be overwritten by every descendant.
-     */
-    public abstract void onFirstRun();
+        PrefManager.PREFERENCE firstStartPreference = this.getFirstStartPreference();
 
-    public abstract PrefManager.PREFERENCE getFirstRunPreference();
+        // reads value from preferences
+        mIsFirstStart = (Boolean) mPrefManager.readPref(firstStartPreference);
+        if (mIsFirstStart) {
+            // write false value to preferences
+            // -> from now on it is not the first time for the activity to run
+            mPrefManager.writePref(firstStartPreference, false);
+        }
+    }
+
+    public abstract PrefManager.PREFERENCE getFirstStartPreference();
 
     /**
      * Sets locale from preferences.
@@ -228,12 +390,17 @@ public abstract class PreferenceAdaptActivity extends AppCompatActivity {
         this.finish();
     }
 
-    protected void onError(Exception e){
-        e.printStackTrace();
-        onError();
+    protected void onError() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Snackbar.make(getContentView(), R.string.error, Snackbar.LENGTH_LONG).show();
+            }
+        });
     }
 
-    protected void onError() {
-        Snackbar.make(getContentView(), R.string.error, Snackbar.LENGTH_LONG).show();
+    protected void onError(final Throwable e) {
+        e.printStackTrace();
+        onError();
     }
 }

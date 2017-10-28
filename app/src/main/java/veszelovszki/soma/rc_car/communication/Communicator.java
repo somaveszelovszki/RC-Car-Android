@@ -1,6 +1,6 @@
 package veszelovszki.soma.rc_car.communication;
 
-import veszelovszki.soma.rc_car.common.Message;
+import android.content.Context;
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017.07.19.
@@ -14,6 +14,8 @@ public interface Communicator {
         void onNewMessage(Message message);
         void onCommunicatorDisconnected();
     }
+
+    void updateContext(Context context);
 
     void connect(Object device);
 

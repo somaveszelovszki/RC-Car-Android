@@ -13,21 +13,8 @@ public class ProfileActivity extends PreferenceAdaptActivity {
         setContentView(R.layout.activity_profile);
     }
 
-    /**
-     * Checks for permissions - called during onCreate().
-     */
-    protected void checkPermissions() {
-
-    }
-
-    /**
-     * Method is called when activity runs for the first time - must be overwritten by every descendant.
-     */
-    public void onFirstRun(){
-
-    }
-
-    public PrefManager.PREFERENCE getFirstRunPreference() {
+    @Override
+    public PrefManager.PREFERENCE getFirstStartPreference() {
         return PrefManager.PREFERENCE.FIRST_START_PROFILE;
     }
 }

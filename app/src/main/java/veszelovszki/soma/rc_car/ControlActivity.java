@@ -1,9 +1,7 @@
 package veszelovszki.soma.rc_car;
 
 import android.Manifest;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -12,20 +10,18 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
-import android.util.Log;
 
 import java.util.Set;
 
-import veszelovszki.soma.rc_car.common.Message;
+import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.communication.Communicator;
-import veszelovszki.soma.rc_car.communication.WiFiCommunicator;
-import veszelovszki.soma.rc_car.fragment.ControlFragment;
 import veszelovszki.soma.rc_car.fragment.DeviceListFragment;
+import veszelovszki.soma.rc_car.fragment.DisplayEnvironmentFragment;
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
+import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
-import veszelovszki.soma.rc_car.utils.Utils.*;
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016. 11. 13.
@@ -43,8 +39,10 @@ public class ControlActivity extends PreferenceAdaptActivity
     private static final Integer DRIVE_DATA_SEND_PERIOD_MS = 2000;
 
     private Communicator mCommunicator;
+
     private SteeringWheelControlFragment mControlFragment;
     private DeviceListFragment mDeviceListFragment;
+    private DisplayEnvironmentFragment mDisplayEnvironmentFragment;
 
     private BluetoothDevice mDevice;
 
@@ -87,12 +85,13 @@ public class ControlActivity extends PreferenceAdaptActivity
         if (savedInstanceState == null) {
             mControlFragment = SteeringWheelControlFragment.newInstance();
             mDeviceListFragment = DeviceListFragment.newInstance();
+            mDisplayEnvironmentFragment = DisplayEnvironmentFragment.newInstance();
 
             try {
                 //WiFiCommunicator.initialize();
                 //mCommunicator = WiFiCommunicator.getInstance(this);
                 //mCommunicator.connect();
-                mCommunicator = new BluetoothCommunicator(this);
+                mCommunicator = BluetoothCommunicator.getInstance(this);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
@@ -102,7 +101,7 @@ public class ControlActivity extends PreferenceAdaptActivity
 
             // If car address is not known yet, opens list of paired devices.
             // If it is known, connects to it and opens control fragment.
-            if (true || carMacAddress.equals("")) {
+            if (carMacAddress.equals("")) {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
                         .commit();
@@ -126,8 +125,8 @@ public class ControlActivity extends PreferenceAdaptActivity
     }
 
     @Override
-    public void onError(Exception e) {
-        e.printStackTrace();
+    public void onError(Throwable e) {
+        super.onError(e);
 
         runOnUiThread(new Runnable() {
             @Override
@@ -151,10 +150,10 @@ public class ControlActivity extends PreferenceAdaptActivity
         mCommunicator.cancel();
     }
 
-    /**
-     * Checks for permissions - called during onCreate().
-     */
-    protected void checkPermissions() {
+    @Override
+    protected void onStart() {
+        super.onStart();
+
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.BLUETOOTH)
                 != PackageManager.PERMISSION_GRANTED) {
@@ -195,14 +194,8 @@ public class ControlActivity extends PreferenceAdaptActivity
         }
     }
 
-    /**
-     * Method is called when activity runs for the first time - must be overwritten by every descendant.
-     */
-    public void onFirstRun() {
-        // TODO
-    }
-
-    public PrefManager.PREFERENCE getFirstRunPreference() {
+    @Override
+    public PrefManager.PREFERENCE getFirstStartPreference() {
         return PrefManager.PREFERENCE.FIRST_START_CONTROL;
     }
 
@@ -245,7 +238,41 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     @Override
     public void onNewMessage(Message message) {
-        // TODO handle message
+
+        switch (message.getCode()) {
+            case ACK:
+                break;
+            case Speed:
+                break;
+            case SteeringAngle:
+                break;
+            case DriveMode:
+                break;
+            case Ultra0_1_EnvPoint:
+            case Ultra2_3_EnvPoint:
+            case Ultra4_5_EnvPoint:
+            case Ultra6_7_EnvPoint:
+            case Ultra8_9_EnvPoint:
+            case Ultra10_11_EnvPoint:
+            case Ultra12_13_EnvPoint:
+            case Ultra14_15_EnvPoint:
+                handleMsg_EnvironmentPoint(message);
+                break;
+            case EnableEnvironment:
+                break;
+        }
+    }
+
+    private void handleMsg_EnvironmentPoint(Message message) {
+        // 1 message stores 2 points (measured by 2 ultrasonic sensors)
+        int pos1 = 2 * (message.getCode().getCodeValue() - Message.CODE.Ultra0_1_EnvPoint.getCodeValue()),
+                pos2 = pos1 + 1;
+
+        Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),
+                p2 = Pointf.fromByteArray(message.getData().subArray(2, 2));
+
+        mDisplayEnvironmentFragment.updatePoint(pos1, p1);
+        mDisplayEnvironmentFragment.updatePoint(pos2, p2);
     }
 
     @Override

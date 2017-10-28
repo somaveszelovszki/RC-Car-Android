@@ -11,5 +11,6 @@
 
     <color name="list_item_background">@color/app_background</color>
     <color name="list_item_background_clicked">@android:color/darker_gray</color>
+    <color name="floating_action_button_color">@color/app_color</color>
 
 </resources>

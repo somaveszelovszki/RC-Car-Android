@@ -1,8 +1,8 @@
-package veszelovszki.soma.rc_car.common;
+package veszelovszki.soma.rc_car.communication;
 
 
-import java.util.ArrayList;
-import java.util.List;
+import veszelovszki.soma.rc_car.utils.ByteArray;
+import veszelovszki.soma.rc_car.utils.Utils;
 
 /**
  * Message object describes msg data - code and value.
@@ -13,41 +13,51 @@ import java.util.List;
 public class Message {
 
     public enum CODE {
-        ACK(0),     // for acknowledgements
-        Speed(1, -55.0f, 55.0f),           // [cm/sec] (>0 means FORWARD)
-        SteeringAngle(2, (float) Math.toRadians(-60.0), (float) Math.toRadians(60.0)),  // [rad] (>0 means LEFT)
-        DriveMode(3);    // values in Utils.DriveMode
+        ACK(                    0b00000000                                                                  ),  // for acknowledgements
+        Speed(                  0b00000001,     -55.0f,                         55.0f                       ),  // [cm/sec] (>0 means FORWARD)
+        SteeringAngle(          0b00000010,     (float) Math.toRadians(-60.0),  (float) Math.toRadians(60.0)),  // [rad] (>0 means LEFT)
+        DriveMode(              0b00000011),   // values in Utils.DriveMode
+
+        Ultra0_1_EnvPoint(      0b00001000,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra2_3_EnvPoint(      0b00001001,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra4_5_EnvPoint(      0b00001010,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra6_7_EnvPoint(      0b00001011,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra8_9_EnvPoint(      0b00001100,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra10_11_EnvPoint(    0b00001101,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra12_13_EnvPoint(    0b00001110,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        Ultra14_15_EnvPoint(    0b00001111,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
+        EnableEnvironment(      0b00010000,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE );
 
         private Integer mCode;
 
-        private Object mMinValue;
-        private Object mMaxValue;
+        private Object mMinDataValue;
+        private Object mMaxDataValue;
 
         CODE(Integer code) {
             this(code, null, null);
         }
 
-        <T> CODE(Integer code, T minValue, T maxValue) {
+        <T> CODE(Integer code, T minDataValue, T maxDataValue) {
             mCode = code;
-            mMinValue = minValue;
-            mMaxValue = maxValue;
+            mMinDataValue = minDataValue;
+            mMaxDataValue = maxDataValue;
         }
 
-        public Integer getCode() {
+        public Integer getCodeValue() {
             return mCode;
         }
 
-        public Object getMinValue() {
-            return mMinValue;
+        public Object getMinDataValue() {
+            return mMinDataValue;
         }
 
-        public Object getMaxValue() {
-            return mMaxValue;
+        public Object getMaxDataValue() {
+            return mMaxDataValue;
         }
 
         public static CODE getByCode(Integer code) {
             for (CODE codeObj : CODE.values())
-                if (codeObj.getCode().equals(code))
+                if (codeObj.getCodeValue().equals(code))
                     return codeObj;
             throw new IllegalArgumentException("No CODE exists for '" + code + "'.");
         }
@@ -79,8 +89,12 @@ public class Message {
         mData = ByteArray.fromFloat(value);
     }
 
-    CODE getCode() {
+    public CODE getCode() {
         return mCode;
+    }
+
+    public ByteArray getData() {
+        return mData;
     }
 
     public Integer getDataAsInt() {
@@ -106,7 +120,7 @@ public class Message {
         System.arraycopy(SEPARATOR.getValue(), 0, bytes, 0, SEPARATOR_LENGTH);
 
         // adds code
-        bytes[SEPARATOR_LENGTH] = (byte) (int) mCode.getCode();
+        bytes[SEPARATOR_LENGTH] = (byte) (int) mCode.getCodeValue();
 
         // adds data
         System.arraycopy(mData.getValue(), 0, bytes, SEPARATOR_LENGTH + CODE_LENGTH, DATA_LENGTH);
@@ -124,7 +138,7 @@ public class Message {
 
     @Override
     public String toString() {
-        return String.valueOf(mCode.getCode()) + ": " + mData.toString();
+        return String.valueOf(mCode.getCodeValue()) + ": " + mData.toString();
     }
 
 
