@@ -10,11 +10,13 @@ import android.support.annotation.NonNull;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.util.Log;
 
 import java.util.Set;
 
 import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.communication.Communicator;
+import veszelovszki.soma.rc_car.fragment.ControlFragment;
 import veszelovszki.soma.rc_car.fragment.DeviceListFragment;
 import veszelovszki.soma.rc_car.fragment.DisplayEnvironmentFragment;
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
@@ -40,9 +42,8 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     private Communicator mCommunicator;
 
-    private SteeringWheelControlFragment mControlFragment;
+    private ControlFragment mControlFragment;
     private DeviceListFragment mDeviceListFragment;
-    private DisplayEnvironmentFragment mDisplayEnvironmentFragment;
 
     private BluetoothDevice mDevice;
 
@@ -82,34 +83,46 @@ public class ControlActivity extends PreferenceAdaptActivity
 
         mPrefManager = new PrefManager(this);
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState != null) {
+            mControlFragment = (ControlFragment) getSupportFragmentManager().getFragment(savedInstanceState, ControlFragment.TAG);
+            mDeviceListFragment = (DeviceListFragment) getSupportFragmentManager().getFragment(savedInstanceState, DeviceListFragment.TAG);
+        } else {
             mControlFragment = SteeringWheelControlFragment.newInstance();
             mDeviceListFragment = DeviceListFragment.newInstance();
-            mDisplayEnvironmentFragment = DisplayEnvironmentFragment.newInstance();
+        }
+    }
 
-            try {
-                //WiFiCommunicator.initialize();
-                //mCommunicator = WiFiCommunicator.getInstance(this);
-                //mCommunicator.connect();
-                mCommunicator = BluetoothCommunicator.getInstance(this);
-            } catch (Exception e) {
-                e.printStackTrace();
-                return;
-            }
+    @Override
+    protected void onResume() {
+        super.onResume();
 
+        //WiFiCommunicator.initialize();
+        //mCommunicator = WiFiCommunicator.getInstance(this);
+        //mCommunicator.connect();
+        mCommunicator = BluetoothCommunicator.getInstance(this);
+
+        if (mCommunicator.isConnected()) {
+            openControlFragment();
+        } else {
             String carMacAddress = (String) mPrefManager.readPref(PrefManager.PREFERENCE.CAR_MAC_ADDRESS);
 
-            // If car address is not known yet, opens list of paired devices.
-            // If it is known, connects to it and opens control fragment.
-            if (carMacAddress.equals("")) {
+            // If car address is known, connects to it and opens control fragment.
+            // If it is not known yet, opens list of paired devices.
+            if (/*mCommunicator.isConnected() && */!carMacAddress.equals("")) {
+                mDevice = ((BluetoothCommunicator)mCommunicator).getDevice(carMacAddress);
+                mCommunicator.connect(mDevice);
+            } else {
                 getSupportFragmentManager().beginTransaction()
                         .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
                         .commit();
-            } else {
-                mDevice = ((BluetoothCommunicator)mCommunicator).getDevice(carMacAddress);
-                mCommunicator.connect(mDevice);
             }
         }
+    }
+
+    @Override
+    protected void onPause() {
+        cancelMessageSending();
+        super.onPause();
     }
 
     @Override
@@ -147,7 +160,7 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     private void cancelMessageSending() {
         mSendHandler.removeCallbacks(mSendMessage);
-        mCommunicator.cancel();
+        //mCommunicator.cancel();
     }
 
     @Override
@@ -215,10 +228,9 @@ public class ControlActivity extends PreferenceAdaptActivity
     }
 
     private void openControlFragment() {
-
         // opens control fragment - adds this fragment to the back stack, so that user can navigate back
         getSupportFragmentManager().beginTransaction()
-                .replace(R.id.fragment_container, mControlFragment, SteeringWheelControlFragment.TAG)
+                .replace(R.id.fragment_container, mControlFragment, ControlFragment.TAG)
                 .commit();
 
         startMessageSending();
@@ -238,7 +250,6 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     @Override
     public void onNewMessage(Message message) {
-
         switch (message.getCode()) {
             case ACK:
                 break;
@@ -256,23 +267,10 @@ public class ControlActivity extends PreferenceAdaptActivity
             case Ultra10_11_EnvPoint:
             case Ultra12_13_EnvPoint:
             case Ultra14_15_EnvPoint:
-                handleMsg_EnvironmentPoint(message);
                 break;
             case EnableEnvironment:
                 break;
         }
-    }
-
-    private void handleMsg_EnvironmentPoint(Message message) {
-        // 1 message stores 2 points (measured by 2 ultrasonic sensors)
-        int pos1 = 2 * (message.getCode().getCodeValue() - Message.CODE.Ultra0_1_EnvPoint.getCodeValue()),
-                pos2 = pos1 + 1;
-
-        Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),
-                p2 = Pointf.fromByteArray(message.getData().subArray(2, 2));
-
-        mDisplayEnvironmentFragment.updatePoint(pos1, p1);
-        mDisplayEnvironmentFragment.updatePoint(pos2, p2);
     }
 
     @Override
@@ -283,6 +281,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     protected void onDestroy() {
         cancelMessageSending();
+        //mCommunicator.cancel();
         super.onDestroy();
     }
 }

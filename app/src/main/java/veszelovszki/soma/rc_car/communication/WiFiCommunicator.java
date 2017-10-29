@@ -106,6 +106,11 @@ public class WiFiCommunicator implements Communicator {
     }
 
     @Override
+    public Boolean isConnected() {
+        return false;
+    }
+
+    @Override
     public synchronized void send(Message msg) {
 
 

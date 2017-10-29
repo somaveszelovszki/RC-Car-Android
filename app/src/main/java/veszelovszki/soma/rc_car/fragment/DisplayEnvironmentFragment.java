@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import veszelovszki.soma.rc_car.R;
+import veszelovszki.soma.rc_car.utils.Config;
 import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.view.EnvironmentView;
 
@@ -31,7 +32,7 @@ public class DisplayEnvironmentFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_display_environment, container, false);
         mEnvironmentView = (EnvironmentView) view.findViewById(R.id.environment_view);
 
-        testInit();
+        //testInit();
 
         return view;
     }
@@ -50,7 +51,7 @@ public class DisplayEnvironmentFragment extends Fragment {
         points.add(new Pointf(30.0f, -75.0f));
         points.add(new Pointf(70.0f, -65.0f));
 
-        mEnvironmentView.updatePoints(points);
+        mEnvironmentView.updatePoints(points.toArray(new Pointf[Config.ULTRA_NUM_SENSORS]));
     }
 
     public void updatePoint(int idx, Pointf point){

@@ -5,18 +5,21 @@ import veszelovszki.soma.rc_car.utils.ByteArray;
 import veszelovszki.soma.rc_car.utils.Utils;
 
 /**
- * Message object describes msg data - code and value.
+ * Message object describes msg data - code and data.
  * Codes match Arduino project's msg codes.
  * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 09.
  */
 
 public class Message {
 
+    public static final ByteArray BOOL_VALUE_TRUE = ByteArray.fromInteger(1);
+    public static final ByteArray BOOL_VALUE_FALSE = ByteArray.fromInteger(0);
+
     public enum CODE {
         ACK(                    0b00000000                                                                  ),  // for acknowledgements
         Speed(                  0b00000001,     -55.0f,                         55.0f                       ),  // [cm/sec] (>0 means FORWARD)
         SteeringAngle(          0b00000010,     (float) Math.toRadians(-60.0),  (float) Math.toRadians(60.0)),  // [rad] (>0 means LEFT)
-        DriveMode(              0b00000011),   // values in Utils.DriveMode
+        DriveMode(              0b00000011),   // datas in Utils.DriveMode
 
         Ultra0_1_EnvPoint(      0b00001000,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
         Ultra2_3_EnvPoint(      0b00001001,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
@@ -26,7 +29,7 @@ public class Message {
         Ultra10_11_EnvPoint(    0b00001101,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
         Ultra12_13_EnvPoint(    0b00001110,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
         Ultra14_15_EnvPoint(    0b00001111,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        EnableEnvironment(      0b00010000,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE );
+        EnableEnvironment(      0b00010000,     BOOL_VALUE_FALSE,               BOOL_VALUE_TRUE             );
 
         private Integer mCode;
 
@@ -79,14 +82,19 @@ public class Message {
         mData = new ByteArray(DATA_LENGTH);
     }
 
-    public Message(CODE code, int value) {
+    public Message(CODE code, Integer data) {
         mCode = code;
-        mData = ByteArray.fromInteger(value);
+        mData = ByteArray.fromInteger(data);
     }
 
-    public Message(CODE code, float value) {
+    public Message(CODE code, Float data) {
         mCode = code;
-        mData = ByteArray.fromFloat(value);
+        mData = ByteArray.fromFloat(data);
+    }
+
+    public Message(CODE code, Boolean data) {
+        mCode = code;
+        mData = data ? BOOL_VALUE_TRUE : BOOL_VALUE_FALSE;
     }
 
     public CODE getCode() {
@@ -103,6 +111,10 @@ public class Message {
 
     public Float getDataAsFloat() {
         return mData.asFloat();
+    }
+
+    public Boolean getDataAsBool() {
+        return mData == BOOL_VALUE_TRUE;
     }
 
     public void setData(Integer data){

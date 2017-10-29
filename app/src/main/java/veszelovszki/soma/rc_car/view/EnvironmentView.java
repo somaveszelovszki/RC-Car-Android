@@ -2,6 +2,7 @@ package veszelovszki.soma.rc_car.view;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -14,9 +15,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import veszelovszki.soma.rc_car.R;
+import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.utils.Config;
 import veszelovszki.soma.rc_car.utils.Pointf;
 
+import static java.lang.Math.max;
 import static java.lang.Math.min;
 
 /**
@@ -30,7 +33,9 @@ public class EnvironmentView extends View {
     private Path mPath;
     private Paint mPaint, mClearPaint;
 
-    private List<Pointf> mPoints = new ArrayList<>();
+    private Bitmap mBackground;
+
+    private Pointf[] mPoints = new Pointf[Config.ULTRA_NUM_SENSORS];
 
     public EnvironmentView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -46,6 +51,12 @@ public class EnvironmentView extends View {
 
         mPath = new Path();
         mPath.setFillType(Path.FillType.EVEN_ODD);
+
+        mBackground = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_car_top);
+
+        // initializes points so that they won't be null
+        for (int i = 0; i < mPoints.length; ++i)
+            mPoints[i] = Pointf.ORIGO;
     }
 
     // override onSizeChanged
@@ -59,7 +70,7 @@ public class EnvironmentView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        Integer w = getWidth(), h = getHeight();
+        int w = getWidth(), h = getHeight();
 
         mPath.reset();
 
@@ -70,28 +81,41 @@ public class EnvironmentView extends View {
         mPath.lineTo(0, 0);
         mPath.close();
 
-        Pointf startPoint = mPoints.get(0).toDisplayPoint(w, h);
-        mPath.moveTo(startPoint.x, startPoint.y);
-
-        for (int i = 1; i < mPoints.size(); ++i) {
-            Pointf p = mPoints.get(i).toDisplayPoint(w, h);
-            mPath.lineTo(p.x, p.y);
+        if (mPoints.length > 0) {
+            Pointf startPoint = mPoints[0].toDisplayPoint(w, h);
+            mPath.moveTo(startPoint.x, startPoint.y);
+            
+            for (int i = 1; i < mPoints.length; ++i) {
+                Pointf p = mPoints[i].toDisplayPoint(w, h);
+                Log.d(TAG, mPoints[i].toString());
+                mPath.lineTo(p.x, p.y);
+            }
+            mPath.lineTo(startPoint.x, startPoint.y);
+            mPath.close();
         }
-        mPath.lineTo(startPoint.x, startPoint.y);
-        mPath.close();
 
-        canvas.drawPaint(mClearPaint);
+        __clearCanvas(canvas);
         canvas.drawPath(mPath, mPaint);
     }
 
+    private void __clearCanvas(Canvas canvas) {
+        canvas.drawPaint(mClearPaint);
+        int ratio = max(getWidth(), getHeight());
+        Bitmap bitmap = Bitmap.createScaledBitmap(mBackground,
+                (int) (Config.CAR_WIDTH / (2 * Config.ULTRA_MAX_DISTANCE) * ratio),
+                (int) (Config.CAR_LENGTH / (2 * Config.ULTRA_MAX_DISTANCE) * ratio), true);
+        canvas.drawBitmap(bitmap,
+                (getWidth() - bitmap.getWidth()) / 2,
+                (getHeight() - bitmap.getHeight()) / 2, null);
+    }
+
     public void updatePoint(int idx, Pointf point){
-        mPoints.set(idx, point);
+        mPoints[idx] = point;
         invalidate();
     }
 
-    public void updatePoints(List<Pointf> points) {
-        mPoints.clear();
-        mPoints.addAll(points);
+    public void updatePoints(Pointf points[]) {
+        System.arraycopy(points, 0, mPoints, 0, points.length);
         invalidate();
     }
 

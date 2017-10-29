@@ -19,6 +19,8 @@ public interface Communicator {
 
     void connect(Object device);
 
+    Boolean isConnected();
+
     void send(Message msg);
 
     void cancel();

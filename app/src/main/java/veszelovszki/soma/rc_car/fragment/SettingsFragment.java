@@ -84,8 +84,9 @@ public class SettingsFragment extends PreferenceFragmentCompat {
 
     @Override
     public void onPause() {
-        super.onPause();
         mSharedPreferences.unregisterOnSharedPreferenceChangeListener(
                 (SharedPreferences.OnSharedPreferenceChangeListener) getActivity());
+
+        super.onPause();
     }
 }

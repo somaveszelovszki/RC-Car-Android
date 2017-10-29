@@ -48,6 +48,7 @@ public class BluetoothCommunicator implements Communicator {
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
 
     private Communicator.EventListener mListener;
+    private boolean mIsConnected = false;
 
     private static BluetoothCommunicator __instance;
 
@@ -56,10 +57,15 @@ public class BluetoothCommunicator implements Communicator {
         //IntentFilter filter = new IntentFilter();
         //filter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
         //filter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+
+
     }
 
     public static BluetoothCommunicator getInstance(Context context) {
-        if (__instance == null) __instance = new BluetoothCommunicator();
+        if (__instance == null) {
+            Log.d(TAG, "Communicator instance is null, creating new one...");
+            __instance = new BluetoothCommunicator();
+        }
 
         __instance.updateContext(context);
         return __instance;
@@ -76,6 +82,7 @@ public class BluetoothCommunicator implements Communicator {
 
     @Override
     public void updateContext(Context context) {
+        Log.d(TAG, "updateContext: " + context.getClass().getSimpleName());
         mContext = context;
         mListener = (EventListener) context;
     }
@@ -91,9 +98,24 @@ public class BluetoothCommunicator implements Communicator {
     }
 
     @Override
+    public Boolean isConnected() {
+        return mIsConnected;
+    }
+
+    @Override
     public void send(Message msg) {
         Log.d(TAG, "Sent: " + msg.toString());
         mConnectedThread.write(msg.getBytes());
+    }
+
+    private void onConnected() {
+        mIsConnected = true;
+        mListener.onCommunicatorConnected();
+    }
+
+    private void onError(Exception e) {
+        mIsConnected = false;
+        mListener.onCommunicationError(e);
     }
 
     private Boolean isEnabled() {
@@ -128,7 +150,7 @@ public class BluetoothCommunicator implements Communicator {
                 Log.d(TAG, "Created socket!");
             } catch (Exception e) {
                 mmSocket = null;
-                mListener.onCommunicationError(e);
+                onError(e);
             }
         }
 
@@ -139,7 +161,7 @@ public class BluetoothCommunicator implements Communicator {
             mBluetoothAdapter.cancelDiscovery();
 
             if (mmSocket == null) {
-                mListener.onCommunicationError(new Exception("Socket is null."));
+                onError(new Exception("Socket is null."));
                 return false;
             }
 
@@ -155,16 +177,16 @@ public class BluetoothCommunicator implements Communicator {
                     Log.e(TAG, "Could not close the client socket", closeException);
                 }
 
-                mListener.onCommunicationError(connectException);
+                onError(connectException);
                 return false;
             }
 
             Log.d(TAG, "Connected to the device through the socket!");
 
-            mConnectedThread = new ConnectedThread(mmSocket, mListener);
+            mConnectedThread = new ConnectedThread(mmSocket);
             mConnectedThread.start();
 
-            mListener.onCommunicatorConnected();
+            onConnected();
 
             return true;
         }
@@ -175,29 +197,26 @@ public class BluetoothCommunicator implements Communicator {
         }
     }
 
-    private static class ConnectedThread extends Thread {
+    private enum RecvState {
+        READ_SEPARATOR, READ_CODE, READ_DATA
+    }
+
+    private class ConnectedThread extends Thread {
         private InputStream mmInStream;
         private OutputStream mmOutStream;
         private ByteArray mmRecvBuffer = new ByteArray(Message.LENGTH);
         private int mmRecvByteIdx = 0;
 
-        private Communicator.EventListener mListener;
-
-        private enum RecvState {
-            READ_SEPARATOR, READ_CODE, READ_DATA
-        }
-
         private RecvState mmRecvState = RecvState.READ_SEPARATOR;
 
-        public ConnectedThread(BluetoothSocket socket, Communicator.EventListener listener) {
-            mListener = listener;
+        public ConnectedThread(BluetoothSocket socket) {
             try {
                 mmInStream = socket.getInputStream();
                 mmOutStream = socket.getOutputStream();
             } catch (IOException e) {
                 mmInStream = null;
                 mmOutStream = null;
-                mListener.onCommunicationError(e);
+                BluetoothCommunicator.__instance.onError(e);
             }
         }
 
@@ -263,7 +282,7 @@ public class BluetoothCommunicator implements Communicator {
 //                    }
 
                 } catch (Exception e) {
-                    mListener.onCommunicationError(e);
+                    BluetoothCommunicator.__instance.onError(e);
                 }
             }
         }
@@ -272,7 +291,7 @@ public class BluetoothCommunicator implements Communicator {
             try {
                 mmOutStream.write(bytes);
             } catch (IOException e) {
-                mListener.onCommunicationError(e);
+                BluetoothCommunicator.__instance.onError(e);
             }
         }
     }
