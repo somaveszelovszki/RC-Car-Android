@@ -20,23 +20,25 @@ import veszelovszki.soma.rc_car.R;
  */
 public class SteeringWheelView extends RelativeLayout {
 
+    private static final String TAG = SteeringWheelView.class.getCanonicalName();
+
     private ImageView mSteeringWheel;
     private RelativeLayout mSteeringWheelContainer;
 
-    private Float mInitialViewRotation;
-    private Double mInitialFingerRotation;
+    private float mInitialViewRotation;
+    private float mInitialFingerRotation;
 
     // these two fields help handling finger movements
-    private Double mPrevFingerRotation;
-    private Boolean mIsFingerPositionOverBorder;
+    private float mPrevFingerRotation;
+    private boolean mIsFingerPositionOverBorder;
 
-    private static final Double BORDER = 180.0;
+    private static final float BORDER = 180.0f;
 
     private ObjectAnimator animation;
-    private static final Integer ANIMATION_TIME_MS = 500;
+    private static final int ANIMATION_TIME = 500;
 
-    public static Float STEERING_WHEEL_MAX_ROTATION = (float) Math.toRadians(120);  // degrees
-    private Float STEERING_WHEEL_JUMP_LIMIT = (float) Math.toRadians(50);  // degrees
+    public static float STEERING_WHEEL_MAX_ROTATION = 120.0f;  // degrees
+    private float STEERING_WHEEL_JUMP_LIMIT = 50.0f;  // degrees
 
     public SteeringWheelView(Context context) {
         this(context, null);
@@ -55,21 +57,26 @@ public class SteeringWheelView extends RelativeLayout {
         mSteeringWheelContainer = (RelativeLayout) this.findViewById(R.id.steering_wheel_container);
         mSteeringWheel = (ImageView) this.findViewById(R.id.steering_wheel);
 
-        mSteeringWheelContainer.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-                return onSteeringWheelTouch(motionEvent);
-            }
-        });
+//        mSteeringWheelContainer.setOnTouchListener(new View.OnTouchListener() {
+//            @Override
+//            public boolean onTouch(View view, MotionEvent motionEvent) {
+//                return onSteeringWheelTouch(motionEvent);
+//            }
+//        });
     }
 
-    public Float getWheelRotation() {
+    @Override
+    public boolean onInterceptTouchEvent(MotionEvent ev) {
+        return true;
+    }
+
+    public float getWheelRotation() {
         // changing signal so that LEFT is positive
-        // returns angle in radians
-        return (float) Math.toRadians(-1 * mSteeringWheel.getRotation());
+        // returns angle in degrees
+        return mSteeringWheel.getRotation();
     }
 
-    private void setWheelRotation(Float rotation) {
+    private void setWheelRotation(float rotation) {
         mSteeringWheel.setRotation(rotation);
     }
 
@@ -78,6 +85,11 @@ public class SteeringWheelView extends RelativeLayout {
                 mSteeringWheelContainer.getWidth() / 2,
                 mSteeringWheelContainer.getHeight() / 2
         );
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        return onSteeringWheelTouch(event);
     }
 
     private Boolean onSteeringWheelTouch(MotionEvent motionEvent) {
@@ -93,33 +105,30 @@ public class SteeringWheelView extends RelativeLayout {
 
         switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
-
                 mInitialViewRotation = getWheelRotation();
-                mInitialFingerRotation = Math.toDegrees(Math.atan2(x - pivot.x, pivot.y - y));
+                mInitialFingerRotation = (float) Math.toDegrees(Math.atan2(x - pivot.x, pivot.y - y));
 
                 mPrevFingerRotation = mInitialFingerRotation;
                 mIsFingerPositionOverBorder = false;
 
                 break;
             case MotionEvent.ACTION_MOVE:
-
-                Double newFingerRotation = Math.toDegrees(Math.atan2(x - pivot.x, pivot.y - y));
-
+                float newFingerRotation = (float) Math.toDegrees(Math.atan2(x - pivot.x, pivot.y - y));
 
                 if (mPrevFingerRotation < -1 * BORDER + STEERING_WHEEL_JUMP_LIMIT / 2
-                    && newFingerRotation > BORDER - STEERING_WHEEL_JUMP_LIMIT / 2
+                        && newFingerRotation > BORDER - STEERING_WHEEL_JUMP_LIMIT / 2
                         ||
                         newFingerRotation < -1 * BORDER + STEERING_WHEEL_JUMP_LIMIT / 2
                                 && mPrevFingerRotation > BORDER - STEERING_WHEEL_JUMP_LIMIT / 2 ) {
                     mIsFingerPositionOverBorder = !mIsFingerPositionOverBorder;
                 }
 
-                Double newFingerCountedRotation = mIsFingerPositionOverBorder ?
+                float newFingerCountedRotation = mIsFingerPositionOverBorder ?
                         (newFingerRotation > 0 ?
                                 -2 * BORDER + newFingerRotation : 2 * BORDER + newFingerRotation)
                         : newFingerRotation;
 
-                Float rotation = (float)(mInitialViewRotation + newFingerCountedRotation - mInitialFingerRotation);
+                Float rotation = mInitialViewRotation + newFingerCountedRotation - mInitialFingerRotation;
                 if (rotation > STEERING_WHEEL_MAX_ROTATION) {
                     rotation = STEERING_WHEEL_MAX_ROTATION;
                 } else if (rotation < (-1) * STEERING_WHEEL_MAX_ROTATION) {
@@ -128,24 +137,27 @@ public class SteeringWheelView extends RelativeLayout {
 
                 Float prevRotation = getWheelRotation();
 
-                if (Math.abs(rotation - prevRotation) > STEERING_WHEEL_JUMP_LIMIT) {
+                if (Math.abs(rotation - prevRotation) > STEERING_WHEEL_JUMP_LIMIT)
                     rotation = prevRotation;
-                }
 
                 setWheelRotation(rotation);
+
+                Log.d(TAG, "rotation: " + rotation);
 
                 mPrevFingerRotation = newFingerRotation;
 
                 break;
             case MotionEvent.ACTION_UP:
                 animation = ObjectAnimator.ofFloat(mSteeringWheel, "rotation", getWheelRotation(), 0);
-                animation.setDuration(ANIMATION_TIME_MS);
+                animation.setDuration(ANIMATION_TIME);
                 animation.setRepeatCount(0);
                 animation.setInterpolator(new AccelerateDecelerateInterpolator());
                 animation.start();
 
                 break;
         }
+
+        invalidate();
 
         return true;
     }

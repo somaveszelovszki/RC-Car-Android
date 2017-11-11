@@ -165,6 +165,11 @@ public class WiFiCommunicator implements Communicator {
     }
 
     @Override
+    public void sendWhileAck(Message msg) {
+
+    }
+
+    @Override
     public void cancel() {
         mCancelFlag.setValue(true);
     }

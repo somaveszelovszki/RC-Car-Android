@@ -23,5 +23,7 @@ public interface Communicator {
 
     void send(Message msg);
 
+    void sendWhileAck(Message msg);
+
     void cancel();
 }

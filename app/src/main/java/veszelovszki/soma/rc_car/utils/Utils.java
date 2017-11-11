@@ -16,6 +16,8 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.Locale;
 
 import static java.lang.Math.max;
@@ -298,10 +300,7 @@ public class Utils {
     }
 
     public static int bytesToInt(byte[] bytes, int startIndex){
-        return (((int) bytes[startIndex]) << 24)
-                | ((int) (bytes[startIndex + 1]) << 16)
-                | ((int) (bytes[startIndex + 2]) << 8)
-                | ((int) bytes[startIndex + 3]);
+        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt(startIndex);
     }
 
     public static int bytesToInt(byte[] bytes){
@@ -309,7 +308,11 @@ public class Utils {
     }
 
     public static float bytesToFloat(byte[] bytes, int startIndex){
-        return Float.intBitsToFloat(bytesToInt(bytes, startIndex));
+        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getFloat(startIndex);
+    }
+
+    public static byte[] floatToBytes(float value) {
+        return ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putFloat(value).array();
     }
 
     public static float bytesToFloat(byte[] bytes){
@@ -317,14 +320,6 @@ public class Utils {
     }
 
     public static byte[] intToBytes(int value){
-        return new byte[] {
-                (byte) (value >> 24),
-                (byte) (value >> 16),
-                (byte) (value >> 8),
-                (byte) value };
-    }
-
-    public static byte[] floatToBytes(float value){
-        return intToBytes(Float.floatToIntBits(value));
+        return ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(value).array();
     }
 }

@@ -1,3 +1,3 @@
 <merge>
-    <include layout="@layout/fragment_container_with_drawer" />
+    <include layout="@layout/fragment_container" />
 </merge>

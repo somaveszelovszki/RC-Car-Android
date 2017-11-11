@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.util.Log;
 
 import java.io.IOException;
@@ -43,6 +44,10 @@ public class BluetoothCommunicator implements Communicator {
     private ConnectedThread mConnectedThread;
     private Context mContext;
 
+    private Handler mHandler = new Handler();
+    private Runnable mSendWaitForAck;
+    private Integer SEND_WAIT_FOR_ACK_PERIOD = 40;      // [ms]
+
     private BluetoothDevice mDevice;
 
     public static final int REQUEST_ENABLE_BLUETOOTH = 1;
@@ -62,10 +67,8 @@ public class BluetoothCommunicator implements Communicator {
     }
 
     public static BluetoothCommunicator getInstance(Context context) {
-        if (__instance == null) {
-            Log.d(TAG, "Communicator instance is null, creating new one...");
+        if (__instance == null)
             __instance = new BluetoothCommunicator();
-        }
 
         __instance.updateContext(context);
         return __instance;
@@ -82,7 +85,6 @@ public class BluetoothCommunicator implements Communicator {
 
     @Override
     public void updateContext(Context context) {
-        Log.d(TAG, "updateContext: " + context.getClass().getSimpleName());
         mContext = context;
         mListener = (EventListener) context;
     }
@@ -106,6 +108,17 @@ public class BluetoothCommunicator implements Communicator {
     public void send(Message msg) {
         Log.d(TAG, "Sent: " + msg.toString());
         mConnectedThread.write(msg.getBytes());
+    }
+
+    @Override
+    public void sendWhileAck(final Message msg) {
+        mSendWaitForAck = new Runnable() {
+            public void run() {
+                send(msg);
+                mHandler.postDelayed(this, SEND_WAIT_FOR_ACK_PERIOD);
+            }
+        };
+        mHandler.post(mSendWaitForAck);
     }
 
     private void onConnected() {
@@ -216,32 +229,16 @@ public class BluetoothCommunicator implements Communicator {
             } catch (IOException e) {
                 mmInStream = null;
                 mmOutStream = null;
-                BluetoothCommunicator.__instance.onError(e);
+                __instance.onError(e);
             }
         }
 
         public void run() {
-            // Keep listening to the InputStream until an exception or an interrupt occurs.
             while (!this.isInterrupted()) {
                 try {
                     Integer availableBytesNum = mmInStream.available();
                     if (availableBytesNum > 0) {
                         Integer bytesNum = min(availableBytesNum, Message.LENGTH - mmRecvByteIdx);
-
-
-//                        mmInStream.read(mmRecvBuffer.getValue(), mmRecvByteIdx, bytesNum);
-//                        mmRecvByteIdx += bytesNum;
-//
-//                        // if SEPARATOR is not at the beginning of the byte array, shifts it
-//                        int sepIndex = mmRecvBuffer.indexOf(Message.SEPARATOR);
-//                        Log.d(TAG, "separator:" + Message.SEPARATOR + " -> as byte array: " + ByteArray.fromInteger(Message.SEPARATOR).toString());
-//                        Log.d(TAG, "buffer:" + mmRecvBuffer.toString());
-//                        Log.d(TAG, "sepIndex:" + sepIndex);
-//                        if (sepIndex > 0) {
-//                            mmRecvBuffer.shiftBytesLeft(sepIndex);
-//                            mmRecvByteIdx -= sepIndex;
-//                        } else if (sepIndex == -1)
-//                            mmRecvByteIdx = 0;
 
                         for (int i = 0; i < bytesNum; ++i) {
                             byte b = (byte) mmInStream.read();
@@ -268,21 +265,18 @@ public class BluetoothCommunicator implements Communicator {
                                         // message received
                                         Message message = Message.fromBytes(mmRecvBuffer.getValue());
                                         Log.d(TAG, "new message:" + message.toString());
-                                        mListener.onNewMessage(message);
+
+                                        if (message.equals(Message.ACK))
+                                            mHandler.removeCallbacks(mSendWaitForAck);
+                                        else
+                                            mListener.onNewMessage(message);
                                     }
                                     break;
                             }
                         }
                     }
-
-//                    if (mmRecvByteIdx == Message.LENGTH) {
-//                        Message message = Message.fromBytes(mmRecvBuffer.getValue());
-//                        Log.d(TAG, "new message:" + message.toString());
-//                        mListener.onNewMessage(message);
-//                    }
-
                 } catch (Exception e) {
-                    BluetoothCommunicator.__instance.onError(e);
+                    __instance.onError(e);
                 }
             }
         }
@@ -291,7 +285,7 @@ public class BluetoothCommunicator implements Communicator {
             try {
                 mmOutStream.write(bytes);
             } catch (IOException e) {
-                BluetoothCommunicator.__instance.onError(e);
+                __instance.onError(e);
             }
         }
     }

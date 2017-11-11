@@ -12,10 +12,10 @@ public abstract class ControlFragment extends Fragment {
     public static final String TAG = ControlFragment.class.getCanonicalName();
 
     // Container activity must implement this interface
-    public interface ControlFragmentListener {
+    public interface EventListener {
     }
 
-    protected ControlFragmentListener mListener;
+    protected EventListener mListener;
 
     @Override
     public void onAttach(Context context) {
@@ -24,10 +24,10 @@ public abstract class ControlFragment extends Fragment {
         // This makes sure that the container context has implemented
         // the listener interface. If not, it throws an exception
         try {
-            mListener = (ControlFragmentListener) context;
+            mListener = (EventListener) context;
         } catch (ClassCastException e) {
             throw new ClassCastException(context.toString()
-                    + " must implement ControlFragmentListener");
+                    + " must implement EventListener");
         }
     }
 

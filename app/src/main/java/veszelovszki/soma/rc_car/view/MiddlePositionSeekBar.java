@@ -1,6 +1,7 @@
 package veszelovszki.soma.rc_car.view;
 
 import android.content.Context;
+import android.support.v7.widget.AppCompatSeekBar;
 import android.util.AttributeSet;
 import android.widget.SeekBar;
 
@@ -8,7 +9,7 @@ import android.widget.SeekBar;
  * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 10.
  */
 
-public abstract class MiddlePositionSeekBar extends SeekBar {
+public abstract class MiddlePositionSeekBar extends AppCompatSeekBar {
 
     public MiddlePositionSeekBar(Context context) {
         this(context, null);

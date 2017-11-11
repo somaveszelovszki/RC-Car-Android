@@ -11,6 +11,7 @@ import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
+import android.view.View;
 
 import java.util.Set;
 
@@ -21,6 +22,7 @@ import veszelovszki.soma.rc_car.fragment.DeviceListFragment;
 import veszelovszki.soma.rc_car.fragment.DisplayEnvironmentFragment;
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
+import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
@@ -29,7 +31,7 @@ import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016. 11. 13.
  */
 public class ControlActivity extends PreferenceAdaptActivity
-        implements SteeringWheelControlFragment.ControlFragmentListener,
+        implements ControlFragment.EventListener,
         Communicator.EventListener,
         DeviceListFragment.DeviceListFragmentListener {
 
@@ -38,7 +40,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     /**
      * Time period of sending drive data (speed, rotation) to the micro-controller.
      */
-    private static final Integer DRIVE_DATA_SEND_PERIOD_MS = 2000;
+    private static final Integer DRIVE_DATA_SEND_PERIOD = 50;
 
     private Communicator mCommunicator;
 
@@ -67,9 +69,9 @@ public class ControlActivity extends PreferenceAdaptActivity
 
             // sends messages
             mCommunicator.send(new Message(Message.CODE.Speed, speed));
-            //mCommunicator.send(new Message(Message.CODE.SteeringAngle, steeringAngle));
+            mCommunicator.send(new Message(Message.CODE.SteeringAngle, steeringAngle));
 
-            mSendHandler.postDelayed(mSendMessage, DRIVE_DATA_SEND_PERIOD_MS);
+            mSendHandler.postDelayed(this, DRIVE_DATA_SEND_PERIOD);
         }
     };
 
@@ -84,9 +86,10 @@ public class ControlActivity extends PreferenceAdaptActivity
         mPrefManager = new PrefManager(this);
 
         if (savedInstanceState != null) {
-            mControlFragment = (ControlFragment) getSupportFragmentManager().getFragment(savedInstanceState, ControlFragment.TAG);
+            mControlFragment = (SteeringWheelControlFragment) getSupportFragmentManager().getFragment(savedInstanceState, ControlFragment.TAG);
             mDeviceListFragment = (DeviceListFragment) getSupportFragmentManager().getFragment(savedInstanceState, DeviceListFragment.TAG);
         } else {
+            //mControlFragment = SteeringWheelControlFragment.newInstance();
             mControlFragment = SteeringWheelControlFragment.newInstance();
             mDeviceListFragment = DeviceListFragment.newInstance();
         }

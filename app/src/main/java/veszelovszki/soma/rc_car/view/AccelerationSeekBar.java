@@ -21,7 +21,7 @@ public class AccelerationSeekBar extends VerticalSeekBar
         implements SeekBar.OnSeekBarChangeListener {
 
     ObjectAnimator animation;
-    private static final Integer ANIMATION_TIME_MS = 500;
+    private static final Integer ANIMATION_TIME = 500;
 
     public static final Integer MIN_POS = 0;
     public static final Integer MAX_POS = 100;
@@ -77,7 +77,7 @@ public class AccelerationSeekBar extends VerticalSeekBar
     @Override
     public void onStopTrackingTouch(SeekBar seekBar) {
         animation = ObjectAnimator.ofInt(seekBar, "progress", seekBar.getProgress(), ((VerticalSeekBar)seekBar).getMiddle());
-        animation.setDuration(ANIMATION_TIME_MS);
+        animation.setDuration(ANIMATION_TIME);
         animation.setRepeatCount(0);
         animation.setInterpolator(new AccelerateDecelerateInterpolator());
         animation.start();

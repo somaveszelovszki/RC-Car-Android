@@ -16,10 +16,10 @@ public class Message {
     public static final ByteArray BOOL_VALUE_FALSE = ByteArray.fromInteger(0);
 
     public enum CODE {
-        ACK(                    0b00000000                                                                  ),  // for acknowledgements
+        ACK_(                   0b00000000                                                                  ),  // for acknowledgements
         Speed(                  0b00000001,     -55.0f,                         55.0f                       ),  // [cm/sec] (>0 means FORWARD)
-        SteeringAngle(          0b00000010,     (float) Math.toRadians(-60.0),  (float) Math.toRadians(60.0)),  // [rad] (>0 means LEFT)
-        DriveMode(              0b00000011),   // datas in Utils.DriveMode
+        SteeringAngle(          0b00000010,     -60.0f,                         60.0f                       ),  // [degree] (>0 means LEFT)
+        DriveMode(              0b00000011),   // values in Utils.DriveMode
 
         Ultra0_1_EnvPoint(      0b00001000,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
         Ultra2_3_EnvPoint(      0b00001001,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
@@ -65,6 +65,8 @@ public class Message {
             throw new IllegalArgumentException("No CODE exists for '" + code + "'.");
         }
     };
+
+    public static final Message ACK = new Message(CODE.ACK_, 0);
 
     public static final Integer SEPARATOR_LENGTH = 4;
     public static final Integer CODE_LENGTH = 1;
@@ -152,6 +154,4 @@ public class Message {
     public String toString() {
         return String.valueOf(mCode.getCodeValue()) + ": " + mData.toString();
     }
-
-
 }

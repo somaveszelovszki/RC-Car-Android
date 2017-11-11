@@ -84,7 +84,7 @@ public class EnvironmentView extends View {
         if (mPoints.length > 0) {
             Pointf startPoint = mPoints[0].toDisplayPoint(w, h);
             mPath.moveTo(startPoint.x, startPoint.y);
-            
+
             for (int i = 1; i < mPoints.length; ++i) {
                 Pointf p = mPoints[i].toDisplayPoint(w, h);
                 Log.d(TAG, mPoints[i].toString());
