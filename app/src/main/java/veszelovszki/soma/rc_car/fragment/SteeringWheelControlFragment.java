@@ -4,11 +4,14 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 
 import veszelovszki.soma.rc_car.R;
 import veszelovszki.soma.rc_car.communication.Message;
+import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.utils.Utils;
 import veszelovszki.soma.rc_car.view.AccelerationSeekBar;
+import veszelovszki.soma.rc_car.view.EnvironmentView;
 import veszelovszki.soma.rc_car.view.SteeringWheelView;
 
 /**
@@ -20,6 +23,10 @@ public class SteeringWheelControlFragment extends ControlFragment {
 
     private SteeringWheelView mSteeringWheelView;
     private AccelerationSeekBar mAccelerationSeekBar;
+    private EnvironmentView mEnvironmentView;
+    private Button mCarEnvironmentEnableButton;
+
+    private Boolean mIsCarEnvironmentEnabled = false;
 
     public static SteeringWheelControlFragment newInstance() {
         return new SteeringWheelControlFragment();
@@ -31,6 +38,19 @@ public class SteeringWheelControlFragment extends ControlFragment {
 
         mSteeringWheelView = (SteeringWheelView) view.findViewById(R.id.steering_wheel_view);
         mAccelerationSeekBar = (AccelerationSeekBar) view.findViewById(R.id.accelerator_seek_bar);
+        mEnvironmentView = (EnvironmentView) view.findViewById(R.id.environment_view);
+        mCarEnvironmentEnableButton = (Button) view.findViewById(R.id.car_environment_enable_button);
+
+        mCarEnvironmentEnableButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setCarEnvironmentEnabled(!isCarEnvironmentEnabled());
+                if (mIsCarEnvironmentEnabled)
+                    mListener.onCarEnvironmentEnabled();
+                else
+                    mListener.onCarEnvironmentDisabled();
+            }
+        });
 
         return view;
     }
@@ -49,6 +69,23 @@ public class SteeringWheelControlFragment extends ControlFragment {
                 (-1) * SteeringWheelView.STEERING_WHEEL_MAX_ROTATION,
                 SteeringWheelView.STEERING_WHEEL_MAX_ROTATION,
                 (float) Message.CODE.SteeringAngle.getMinDataValue(), (float) Message.CODE.SteeringAngle.getMaxDataValue());
+    }
+
+    @Override
+    public void setCarEnvironmentEnabled(Boolean enabled) {
+        mIsCarEnvironmentEnabled = enabled;
+        mEnvironmentView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        mCarEnvironmentEnableButton.setText(enabled ? R.string.hide_car_environment : R.string.show_car_environment);
+    }
+
+    @Override
+    public Boolean isCarEnvironmentEnabled() {
+        return mIsCarEnvironmentEnabled;
+    }
+
+    @Override
+    public void updateCarEnvironmentPoint(int idx, Pointf point){
+        mEnvironmentView.updatePoint(idx, point);
     }
 }
 

@@ -11,6 +11,7 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import veszelovszki.soma.rc_car.R;
+import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.view.AccelerationSeekBar;
 
 /**
@@ -79,5 +80,20 @@ public class GyroscopeControlFragment extends ControlFragment {
     public float getSteeringAngle() {
         //TODO
         return 0.0f;
+    }
+
+    @Override
+    public void setCarEnvironmentEnabled(Boolean enabled) {
+        // TODO
+    }
+
+    @Override
+    public Boolean isCarEnvironmentEnabled() {
+        return null; // TODO
+    }
+
+    @Override
+    public void updateCarEnvironmentPoint(int idx, Pointf point) {
+        // TODO
     }
 }

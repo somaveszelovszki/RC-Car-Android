@@ -45,8 +45,8 @@ public class BluetoothCommunicator implements Communicator {
     private Context mContext;
 
     private Handler mHandler = new Handler();
-    private Runnable mSendWaitForAck;
-    private Integer SEND_WAIT_FOR_ACK_PERIOD = 40;      // [ms]
+    private Runnable mSendAndWaitForAck;
+    private Integer SEND_WAIT_FOR_ACK_PERIOD = 200;      // [ms]
 
     private BluetoothDevice mDevice;
 
@@ -111,14 +111,14 @@ public class BluetoothCommunicator implements Communicator {
     }
 
     @Override
-    public void sendWhileAck(final Message msg) {
-        mSendWaitForAck = new Runnable() {
+    public void sendAndWaitACK(final Message msg) {
+        mSendAndWaitForAck = new Runnable() {
             public void run() {
                 send(msg);
                 mHandler.postDelayed(this, SEND_WAIT_FOR_ACK_PERIOD);
             }
         };
-        mHandler.post(mSendWaitForAck);
+        mHandler.post(mSendAndWaitForAck);
     }
 
     private void onConnected() {
@@ -264,12 +264,11 @@ public class BluetoothCommunicator implements Communicator {
 
                                         // message received
                                         Message message = Message.fromBytes(mmRecvBuffer.getValue());
-                                        Log.d(TAG, "new message:" + message.toString());
 
-                                        if (message.equals(Message.ACK))
-                                            mHandler.removeCallbacks(mSendWaitForAck);
-                                        else
-                                            mListener.onNewMessage(message);
+                                        if (message.getCode().equals(Message.CODE.ACK_))
+                                            mHandler.removeCallbacks(mSendAndWaitForAck);
+
+                                        mListener.onNewMessage(message);
                                     }
                                     break;
                             }

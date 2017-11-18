@@ -60,9 +60,9 @@ public class DisplayEnvironmentActivity extends PreferenceAdaptActivity
 
     @Override
     protected void onPause() {
-        if (mCommunicator.isConnected()) {
-            mCommunicator.send(new Message(Message.CODE.EnableEnvironment, false));
-        } else
+        if (mCommunicator.isConnected())
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnableEnvironment, false));
+        else
             onError(new Exception("Communicator is not connected!"));
 
         super.onPause();
@@ -86,7 +86,7 @@ public class DisplayEnvironmentActivity extends PreferenceAdaptActivity
     @Override
     public void onNewMessage(Message message) {
         switch (message.getCode()) {
-            case ACK:
+            case ACK_:
                 break;
             case Speed:
                 break;

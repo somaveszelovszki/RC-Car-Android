@@ -37,7 +37,7 @@ public class SettingsFragment extends PreferenceFragmentCompat {
     }
 
     public void update() {
-        setupControlTypeList();
+        //setupControlTypeList();
         setupDriveModeList();
     }
 

@@ -142,8 +142,6 @@ public class SteeringWheelView extends RelativeLayout {
 
                 setWheelRotation(rotation);
 
-                Log.d(TAG, "rotation: " + rotation);
-
                 mPrevFingerRotation = newFingerRotation;
 
                 break;

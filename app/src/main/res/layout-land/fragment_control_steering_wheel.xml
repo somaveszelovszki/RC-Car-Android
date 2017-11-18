@@ -1,20 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical" android:layout_width="match_parent"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
     android:layout_height="match_parent">
 
     <LinearLayout
         android:orientation="horizontal"
         android:id="@+id/control_panel"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <RelativeLayout
             android:layout_margin="15dp"
             android:layout_width="0dp"
             android:layout_weight="1"
             android:layout_height="match_parent"
-            android:orientation="vertical"
             android:paddingTop="20dp"
             android:paddingBottom="20dp">
 
@@ -34,6 +35,13 @@
 
         </RelativeLayout>
 
+        <veszelovszki.soma.rc_car.view.EnvironmentView
+            android:id="@+id/environment_view"
+            android:layout_height="match_parent"
+            android:layout_width="0dp"
+            android:layout_weight="2"
+            android:visibility="gone"/>
+
         <veszelovszki.soma.rc_car.view.SteeringWheelView
             android:id="@+id/steering_wheel_view"
             android:layout_width="0dp"
@@ -41,5 +49,16 @@
             android:layout_height="match_parent" />
 
     </LinearLayout>
+
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/car_environment_enable_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="@string/show_car_environment"/>
+    </RelativeLayout>
 
 </LinearLayout>

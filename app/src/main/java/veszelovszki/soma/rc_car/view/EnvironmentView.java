@@ -87,7 +87,6 @@ public class EnvironmentView extends View {
 
             for (int i = 1; i < mPoints.length; ++i) {
                 Pointf p = mPoints[i].toDisplayPoint(w, h);
-                Log.d(TAG, mPoints[i].toString());
                 mPath.lineTo(p.x, p.y);
             }
             mPath.lineTo(startPoint.x, startPoint.y);
@@ -101,9 +100,8 @@ public class EnvironmentView extends View {
     private void __clearCanvas(Canvas canvas) {
         canvas.drawPaint(mClearPaint);
         int ratio = max(getWidth(), getHeight());
-        Bitmap bitmap = Bitmap.createScaledBitmap(mBackground,
-                (int) (Config.CAR_WIDTH / (2 * Config.ULTRA_MAX_DISTANCE) * ratio),
-                (int) (Config.CAR_LENGTH / (2 * Config.ULTRA_MAX_DISTANCE) * ratio), true);
+        int dstSide = (int) (Config.CAR_LENGTH / (2 * Config.ULTRA_MAX_DISTANCE) * ratio);
+        Bitmap bitmap = Bitmap.createScaledBitmap(mBackground, dstSide, dstSide, true);
         canvas.drawBitmap(bitmap,
                 (getWidth() - bitmap.getWidth()) / 2,
                 (getHeight() - bitmap.getHeight()) / 2, null);

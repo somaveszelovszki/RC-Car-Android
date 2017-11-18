@@ -40,7 +40,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     /**
      * Time period of sending drive data (speed, rotation) to the micro-controller.
      */
-    private static final Integer DRIVE_DATA_SEND_PERIOD = 50;
+    private static final Integer DRIVE_DATA_SEND_PERIOD = 100;
 
     private Communicator mCommunicator;
 
@@ -64,9 +64,6 @@ public class ControlActivity extends PreferenceAdaptActivity
             float speed = mControlFragment.getSpeed();
             float steeringAngle = mControlFragment.getSteeringAngle();
 
-            //Log.d(TAG, "speed: " + speed);
-            //Log.d(TAG, "angle: " + steeringAngle);
-
             // sends messages
             mCommunicator.send(new Message(Message.CODE.Speed, speed));
             mCommunicator.send(new Message(Message.CODE.SteeringAngle, steeringAngle));
@@ -89,7 +86,6 @@ public class ControlActivity extends PreferenceAdaptActivity
             mControlFragment = (SteeringWheelControlFragment) getSupportFragmentManager().getFragment(savedInstanceState, ControlFragment.TAG);
             mDeviceListFragment = (DeviceListFragment) getSupportFragmentManager().getFragment(savedInstanceState, DeviceListFragment.TAG);
         } else {
-            //mControlFragment = SteeringWheelControlFragment.newInstance();
             mControlFragment = SteeringWheelControlFragment.newInstance();
             mDeviceListFragment = DeviceListFragment.newInstance();
         }
@@ -157,7 +153,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     }
 
     private void startMessageSending() {
-        mCommunicator.send(new Message(Message.CODE.DriveMode, (Integer) mPrefManager.readPref(PrefManager.PREFERENCE.DRIVE_MODE)));
+        mCommunicator.sendAndWaitACK(new Message(Message.CODE.DriveMode, Integer.valueOf((String) mPrefManager.readPref(PrefManager.PREFERENCE.DRIVE_MODE))));
         mSendHandler.post(mSendMessage);
     }
 
@@ -254,7 +250,8 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     public void onNewMessage(Message message) {
         switch (message.getCode()) {
-            case ACK:
+            case ACK_:
+                Log.d(TAG, "ACK received");
                 break;
             case Speed:
                 break;
@@ -270,10 +267,28 @@ public class ControlActivity extends PreferenceAdaptActivity
             case Ultra10_11_EnvPoint:
             case Ultra12_13_EnvPoint:
             case Ultra14_15_EnvPoint:
+                handleMsg_EnvironmentPoint(message);
                 break;
             case EnableEnvironment:
                 break;
         }
+    }
+
+    private void handleMsg_EnvironmentPoint(Message message) {
+        // 1 message stores 2 points (measured by 2 ultrasonic sensors)
+        final int pos1 = 2 * (message.getCode().getCodeValue() - Message.CODE.Ultra0_1_EnvPoint.getCodeValue()),
+                pos2 = pos1 + 1;
+
+        final Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),
+                p2 = Pointf.fromByteArray(message.getData().subArray(2, 2));
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mControlFragment.updateCarEnvironmentPoint(pos1, p1);
+                mControlFragment.updateCarEnvironmentPoint(pos2, p2);
+            }
+        });
     }
 
     @Override
@@ -286,5 +301,21 @@ public class ControlActivity extends PreferenceAdaptActivity
         cancelMessageSending();
         //mCommunicator.cancel();
         super.onDestroy();
+    }
+
+    @Override
+    public void onCarEnvironmentEnabled() {
+        if (mCommunicator.isConnected())
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnableEnvironment, true));
+        else
+            onError(new Exception("Communicator is not connected!"));
+    }
+
+    @Override
+    public void onCarEnvironmentDisabled() {
+        if (mCommunicator.isConnected())
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnableEnvironment, false));
+        else
+            onError(new Exception("Communicator is not connected!"));
     }
 }

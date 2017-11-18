@@ -4,11 +4,19 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <veszelovszki.soma.rc_car.view.EnvironmentView
+        android:id="@+id/environment_view"
+        android:layout_width="match_parent"
+        android:visibility="gone"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
     <LinearLayout
         android:orientation="horizontal"
         android:id="@+id/control_panel"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <RelativeLayout
             android:layout_margin="15dp"
@@ -16,8 +24,8 @@
             android:layout_weight="1"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            android:paddingTop="100dp"
-            android:paddingBottom="100dp">
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp">
 
             <veszelovszki.soma.rc_car.view.AccelerationSeekBar
                 android:id="@+id/accelerator_seek_bar"
@@ -33,4 +41,14 @@
 
     </LinearLayout>
 
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <Button
+            android:id="@+id/car_environment_enable_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerHorizontal="true"
+            android:text="@string/show_car_environment"/>
+    </RelativeLayout>
 </LinearLayout>

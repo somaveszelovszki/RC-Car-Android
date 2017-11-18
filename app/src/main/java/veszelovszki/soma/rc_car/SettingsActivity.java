@@ -7,6 +7,7 @@ import android.support.v7.app.ActionBar;
 import android.view.Menu;
 import android.view.MenuItem;
 
+import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.fragment.SettingsFragment;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;

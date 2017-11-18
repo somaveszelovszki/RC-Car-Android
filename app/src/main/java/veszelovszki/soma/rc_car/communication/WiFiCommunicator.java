@@ -165,7 +165,7 @@ public class WiFiCommunicator implements Communicator {
     }
 
     @Override
-    public void sendWhileAck(Message msg) {
+    public void sendAndWaitACK(Message msg) {
 
     }
 

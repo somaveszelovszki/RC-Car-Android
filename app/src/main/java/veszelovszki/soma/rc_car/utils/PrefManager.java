@@ -100,8 +100,8 @@ public class PrefManager {
         // default app language is English
         APP_LANGUAGE("app_language", String.class, "EN"),
         CAR_MAC_ADDRESS("car_mac_address", String.class, ""),
-        CONTROL_TYPE("pref_control_type", Integer.class, Utils.ControlType.STEERING_WHEEL.getId()),
-        DRIVE_MODE("pref_drive_mode", Integer.class, Utils.DriveMode.FREE_DRIVE.getId()),
+        CONTROL_TYPE("pref_control_type", String.class, Utils.ControlType.STEERING_WHEEL.getId().toString()),
+        DRIVE_MODE("pref_drive_mode", String.class, Utils.DriveMode.FREE_DRIVE.getId().toString()),
 
 
         FIRST_START_CONTROL("first_start_control", Boolean.class, true),
