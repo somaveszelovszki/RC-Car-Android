@@ -259,24 +259,17 @@ public class ControlActivity extends PreferenceAdaptActivity
                 break;
             case DriveMode:
                 break;
-            case Ultra0_1_EnvPoint:
-            case Ultra2_3_EnvPoint:
-            case Ultra4_5_EnvPoint:
-            case Ultra6_7_EnvPoint:
-            case Ultra8_9_EnvPoint:
-            case Ultra10_11_EnvPoint:
-            case Ultra12_13_EnvPoint:
-            case Ultra14_15_EnvPoint:
+            case UltraEnvPoint:
                 handleMsg_EnvironmentPoint(message);
                 break;
-            case EnableEnvironment:
+            case EnvEn:
                 break;
         }
     }
 
     private void handleMsg_EnvironmentPoint(Message message) {
         // 1 message stores 2 points (measured by 2 ultrasonic sensors)
-        final int pos1 = 2 * (message.getCode().getCodeValue() - Message.CODE.Ultra0_1_EnvPoint.getCodeValue()),
+        final int pos1 = 2 * ((int)message.getCode().getCodeValue() - (int)Message.CODE.UltraEnvPoint.getCodeValue()),
                 pos2 = pos1 + 1;
 
         final Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),
@@ -306,7 +299,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     public void onCarEnvironmentEnabled() {
         if (mCommunicator.isConnected())
-            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnableEnvironment, true));
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvEn, true));
         else
             onError(new Exception("Communicator is not connected!"));
     }
@@ -314,7 +307,7 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     public void onCarEnvironmentDisabled() {
         if (mCommunicator.isConnected())
-            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnableEnvironment, false));
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvEn, false));
         else
             onError(new Exception("Communicator is not connected!"));
     }

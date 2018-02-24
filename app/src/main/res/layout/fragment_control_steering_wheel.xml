@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <veszelovszki.soma.rc_car.view.EnvironmentView
+    <veszelovszki.soma.rc_car.view.RelativeEnvironmentView
         android:id="@+id/environment_view"
         android:layout_width="match_parent"
         android:visibility="gone"

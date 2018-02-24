@@ -11,7 +11,7 @@ import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.utils.Utils;
 import veszelovszki.soma.rc_car.view.AccelerationSeekBar;
-import veszelovszki.soma.rc_car.view.EnvironmentView;
+import veszelovszki.soma.rc_car.view.RelativeEnvironmentView;
 import veszelovszki.soma.rc_car.view.SteeringWheelView;
 
 /**
@@ -23,7 +23,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
 
     private SteeringWheelView mSteeringWheelView;
     private AccelerationSeekBar mAccelerationSeekBar;
-    private EnvironmentView mEnvironmentView;
+    private RelativeEnvironmentView mRelativeEnvironmentView;
     private Button mCarEnvironmentEnableButton;
 
     private Boolean mIsCarEnvironmentEnabled = false;
@@ -38,7 +38,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
 
         mSteeringWheelView = (SteeringWheelView) view.findViewById(R.id.steering_wheel_view);
         mAccelerationSeekBar = (AccelerationSeekBar) view.findViewById(R.id.accelerator_seek_bar);
-        mEnvironmentView = (EnvironmentView) view.findViewById(R.id.environment_view);
+        mRelativeEnvironmentView = (RelativeEnvironmentView) view.findViewById(R.id.environment_view);
         mCarEnvironmentEnableButton = (Button) view.findViewById(R.id.car_environment_enable_button);
 
         mCarEnvironmentEnableButton.setOnClickListener(new View.OnClickListener() {
@@ -74,7 +74,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
     @Override
     public void setCarEnvironmentEnabled(Boolean enabled) {
         mIsCarEnvironmentEnabled = enabled;
-        mEnvironmentView.setVisibility(enabled ? View.VISIBLE : View.GONE);
+        mRelativeEnvironmentView.setVisibility(enabled ? View.VISIBLE : View.GONE);
         mCarEnvironmentEnableButton.setText(enabled ? R.string.hide_car_environment : R.string.show_car_environment);
     }
 
@@ -85,7 +85,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
 
     @Override
     public void updateCarEnvironmentPoint(int idx, Pointf point){
-        mEnvironmentView.updatePoint(idx, point);
+        mRelativeEnvironmentView.updatePoint(idx, point);
     }
 }
 

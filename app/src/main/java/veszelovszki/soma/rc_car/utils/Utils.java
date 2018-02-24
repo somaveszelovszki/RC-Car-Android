@@ -105,8 +105,8 @@ public class Utils {
         }
     }
 
-    public static final byte SIGNED_BYTE_MIN_VALUE = (byte) 0b11111111;
-    public static final byte SIGNED_BYTE_MAX_VALUE = (byte) 0b01111111;
+    public static final byte INT8_MIN = (byte) 0b11111111;
+    public static final byte INT8_MAX = (byte) 0b01111111;
 
     public static final String TAG = Utils.class.getCanonicalName();
 

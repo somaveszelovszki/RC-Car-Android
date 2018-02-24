@@ -8,14 +8,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.View;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import veszelovszki.soma.rc_car.R;
-import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.utils.Config;
 import veszelovszki.soma.rc_car.utils.Pointf;
 
@@ -26,9 +21,9 @@ import static java.lang.Math.min;
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017.10.25.
  */
 
-public class EnvironmentView extends View {
+public class RelativeEnvironmentView extends View {
 
-    private static final String TAG = EnvironmentView.class.getCanonicalName();
+    private static final String TAG = RelativeEnvironmentView.class.getCanonicalName();
 
     private Path mPath;
     private Paint mPaint, mClearPaint;
@@ -37,7 +32,7 @@ public class EnvironmentView extends View {
 
     private Pointf[] mPoints = new Pointf[Config.ULTRA_NUM_SENSORS];
 
-    public EnvironmentView(Context context, AttributeSet attrs) {
+    public RelativeEnvironmentView(Context context, AttributeSet attrs) {
         super(context, attrs);
 
         mPaint = new Paint();
@@ -100,7 +95,7 @@ public class EnvironmentView extends View {
     private void __clearCanvas(Canvas canvas) {
         canvas.drawPaint(mClearPaint);
         int ratio = max(getWidth(), getHeight());
-        int dstSide = (int) (Config.CAR_LENGTH / (2 * Config.ULTRA_MAX_DISTANCE) * ratio);
+        int dstSide = (int) (Config.CAR_LENGTH / (2 * Config.ULTRA_MAX_DIST) * ratio);
         Bitmap bitmap = Bitmap.createScaledBitmap(mBackground, dstSide, dstSide, true);
         canvas.drawBitmap(bitmap,
                 (getWidth() - bitmap.getWidth()) / 2,
@@ -111,10 +106,4 @@ public class EnvironmentView extends View {
         mPoints[idx] = point;
         invalidate();
     }
-
-    public void updatePoints(Pointf points[]) {
-        System.arraycopy(points, 0, mPoints, 0, points.length);
-        invalidate();
-    }
-
 }

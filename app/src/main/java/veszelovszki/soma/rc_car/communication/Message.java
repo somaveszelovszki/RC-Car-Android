@@ -6,48 +6,51 @@ import veszelovszki.soma.rc_car.utils.Utils;
 
 /**
  * Message object describes msg data - code and data.
- * Codes match Arduino project's msg codes.
+ * Codes match Arduino project's message codes.
  * Created by Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017. 02. 09.
  */
 
 public class Message {
 
-    public static final ByteArray BOOL_VALUE_TRUE = ByteArray.fromInteger(1);
-    public static final ByteArray BOOL_VALUE_FALSE = ByteArray.fromInteger(0);
+    public static final ByteArray BOOL_TRUE = ByteArray.fromInteger(1);
+    public static final ByteArray BOOL_FALSE = ByteArray.fromInteger(0);
 
     public enum CODE {
-        ACK_(                   0b00000000                                                                  ),  // for acknowledgements
-        Speed(                  0b00000001,     -55.0f,                         55.0f                       ),  // [cm/sec] (>0 means FORWARD)
-        SteeringAngle(          0b00000010,     -60.0f,                         60.0f                       ),  // [degree] (>0 means LEFT)
-        DriveMode(              0b00000011),   // values in Utils.DriveMode
+        ACK_(           0b00000000                                                      ),  // for acknowledgements
+        Speed(          0b00000001,     -55.0f,           55.0f                         ),  // [cm/sec] (>0 means FORWARD)
+        SteeringAngle(  0b00000010,     -60.0f,           60.0f                         ),  // [degree] (>0 means LEFT)
+        DriveMode(      0b00000011                                                      ),  // values in Utils.DriveMode
+        EnvEn(          0b00000111,     BOOL_FALSE,       BOOL_TRUE                     ),  // enable/disable relative environment sending.
+        UltraEnvPoint(  0b00001000,     Utils.INT8_MIN,   Utils.INT8_MAX,   0b11111000  ),  // group sensed points (index of the point-pair needs to be added to this number)
+        EnvGrid(        0b01000000,                                         0b11000000  );  // group for environment grid points (container's X (2) and Y (4) coordinates need to be added to this number)
 
-        Ultra0_1_EnvPoint(      0b00001000,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra2_3_EnvPoint(      0b00001001,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra4_5_EnvPoint(      0b00001010,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra6_7_EnvPoint(      0b00001011,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra8_9_EnvPoint(      0b00001100,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra10_11_EnvPoint(    0b00001101,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra12_13_EnvPoint(    0b00001110,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        Ultra14_15_EnvPoint(    0b00001111,     Utils.SIGNED_BYTE_MIN_VALUE,    Utils.SIGNED_BYTE_MAX_VALUE ),
-        EnableEnvironment(      0b00010000,     BOOL_VALUE_FALSE,               BOOL_VALUE_TRUE             );
-
-        private Integer mCode;
+        private byte mCodeByte;
 
         private Object mMinDataValue;
         private Object mMaxDataValue;
+        private byte mMatchPattern;
 
-        CODE(Integer code) {
-            this(code, null, null);
+        CODE(int code) {
+            this(code, 0b11111111);
         }
 
-        <T> CODE(Integer code, T minDataValue, T maxDataValue) {
-            mCode = code;
+        CODE(int code, int matchPattern) {
+            this(code, null, null, matchPattern);
+        }
+
+        <T> CODE(int code, T minDataValue, T maxDataValue) {
+            this(code, minDataValue, maxDataValue, 0b11111111);
+        }
+
+        <T> CODE(int code, T minDataValue, T maxDataValue, int matchPattern) {
+            mCodeByte = (byte)code;
             mMinDataValue = minDataValue;
             mMaxDataValue = maxDataValue;
+            mMatchPattern = (byte)matchPattern;
         }
 
-        public Integer getCodeValue() {
-            return mCode;
+        public byte getCodeValue() {
+            return mCodeByte;
         }
 
         public Object getMinDataValue() {
@@ -58,9 +61,9 @@ public class Message {
             return mMaxDataValue;
         }
 
-        public static CODE getByCode(Integer code) {
+        public static CODE apply(byte code) {
             for (CODE codeObj : CODE.values())
-                if (codeObj.getCodeValue().equals(code))
+                if (codeObj.getCodeValue() == (code & codeObj.mMatchPattern))
                     return codeObj;
             throw new IllegalArgumentException("No CODE exists for '" + code + "'.");
         }
@@ -73,30 +76,51 @@ public class Message {
     public static final Integer DATA_LENGTH = 4;
     public static final Integer LENGTH = SEPARATOR_LENGTH + CODE_LENGTH + DATA_LENGTH;
 
-    // equals Integer.MAX_VALUE and float NaN       (length = 4)
+    // equals Integer.MAX and float NaN       (length = 4)
     // forbidden as data value
     public static final ByteArray SEPARATOR = ByteArray.fromInteger(0x7fffffff);
 
     private CODE mCode;
+    private byte mCodeByte;
     private ByteArray mData;      // length = 4
 
     public Message(){
         mData = new ByteArray(DATA_LENGTH);
     }
 
-    public Message(CODE code, Integer data) {
+    public Message(CODE code, int data) {
         mCode = code;
+        mCodeByte = mCode.getCodeValue();
         mData = ByteArray.fromInteger(data);
     }
 
-    public Message(CODE code, Float data) {
+    public Message(CODE code, float data) {
         mCode = code;
+        mCodeByte = mCode.getCodeValue();
         mData = ByteArray.fromFloat(data);
     }
 
-    public Message(CODE code, Boolean data) {
+    public Message(CODE code, boolean data) {
         mCode = code;
-        mData = data ? BOOL_VALUE_TRUE : BOOL_VALUE_FALSE;
+        mData = data ? BOOL_TRUE : BOOL_FALSE;
+    }
+
+    public Message(byte codeByte, int data) {
+        mCodeByte = codeByte;
+        mCode = CODE.apply(codeByte);
+        mData = ByteArray.fromInteger(data);
+    }
+
+    public Message(byte codeByte, float data) {
+        mCodeByte = codeByte;
+        mCode = CODE.apply(codeByte);
+        mData = ByteArray.fromFloat(data);
+    }
+
+    public Message(byte codeByte, boolean data) {
+        mCodeByte = codeByte;
+        mCode = CODE.apply(codeByte);
+        mData = data ? BOOL_TRUE : BOOL_FALSE;
     }
 
     public CODE getCode() {
@@ -107,26 +131,6 @@ public class Message {
         return mData;
     }
 
-    public Integer getDataAsInt() {
-        return mData.asInteger();
-    }
-
-    public Float getDataAsFloat() {
-        return mData.asFloat();
-    }
-
-    public Boolean getDataAsBool() {
-        return mData == BOOL_VALUE_TRUE;
-    }
-
-    public void setData(Integer data){
-        mData = ByteArray.fromInteger(data);
-    }
-
-    public void setData(Float data){
-        mData = ByteArray.fromFloat(data);
-    }
-
     public byte[] getBytes(){
         byte[] bytes = new byte[LENGTH];
 
@@ -134,7 +138,7 @@ public class Message {
         System.arraycopy(SEPARATOR.getValue(), 0, bytes, 0, SEPARATOR_LENGTH);
 
         // adds code
-        bytes[SEPARATOR_LENGTH] = (byte) (int) mCode.getCodeValue();
+        bytes[SEPARATOR_LENGTH] = mCode.getCodeValue();
 
         // adds data
         System.arraycopy(mData.getValue(), 0, bytes, SEPARATOR_LENGTH + CODE_LENGTH, DATA_LENGTH);
@@ -145,13 +149,15 @@ public class Message {
     public static Message fromBytes(byte[] bytes){
         Message message = new Message();
         // skips SEPARATOR
-        message.mCode = CODE.getByCode((int) bytes[SEPARATOR_LENGTH]);
+
+        message.mCodeByte = bytes[SEPARATOR_LENGTH];
+        message.mCode = CODE.apply(bytes[SEPARATOR_LENGTH]);
         System.arraycopy(bytes, SEPARATOR_LENGTH + CODE_LENGTH, message.mData.getValue(), 0, Message.DATA_LENGTH);
         return message;
     }
 
     @Override
     public String toString() {
-        return String.valueOf(mCode.getCodeValue()) + ": " + mData.toString();
+        return String.valueOf((int)mCode.getCodeValue()) + ": " + mData.toString();
     }
 }
