@@ -10,6 +10,7 @@ public class Config {
     public static final Integer ULTRA_MAX_DIST = 200;
     public static final Integer ULTRA_NUM_SENSORS = 12;
 
+    public static final Integer ENV_ABS_POINTS_DIST = (int)(CAR_WIDTH / 2);
     public static final Integer ENV_ABS_AXIS_POINTS_NUM = 48;
     public static final Integer ENV_ABS_POINTS_BIT_DEPTH = 2;
 

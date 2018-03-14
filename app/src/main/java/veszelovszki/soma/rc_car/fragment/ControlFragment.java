@@ -42,7 +42,4 @@ public abstract class ControlFragment extends Fragment {
     public abstract void setCarEnvironmentEnabled(Boolean enabled);
 
     public abstract Boolean isCarEnvironmentEnabled();
-
-    public abstract void updateCarEnvironmentPoint(int idx, Pointf point);
-
 }

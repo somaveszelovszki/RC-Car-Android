@@ -4,7 +4,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <veszelovszki.soma.rc_car.view.RelativeEnvironmentView
+    <!--<veszelovszki.soma.rc_car.view.RelativeEnvironmentView-->
+        <!--android:id="@+id/environment_view"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:visibility="gone"-->
+        <!--android:layout_height="0dp"-->
+        <!--android:layout_weight="1"/>-->
+
+    <veszelovszki.soma.rc_car.view.AbsoluteEnvironmentView
         android:id="@+id/environment_view"
         android:layout_width="match_parent"
         android:visibility="gone"

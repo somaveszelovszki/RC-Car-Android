@@ -53,7 +53,7 @@ public class DisplayEnvironmentActivity extends PreferenceAdaptActivity
         mCommunicator = BluetoothCommunicator.getInstance(this);
 
         if (mCommunicator.isConnected()) {
-            mCommunicator.send(new Message(Message.CODE.EnvEn, true));
+            mCommunicator.send(new Message(Message.CODE.RelEnvEn, true));
         } else
             onError(new Exception("Communicator is not connected!"));
     }
@@ -61,7 +61,7 @@ public class DisplayEnvironmentActivity extends PreferenceAdaptActivity
     @Override
     protected void onPause() {
         if (mCommunicator.isConnected())
-            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvEn, false));
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.RelEnvEn, false));
         else
             onError(new Exception("Communicator is not connected!"));
 
@@ -94,10 +94,10 @@ public class DisplayEnvironmentActivity extends PreferenceAdaptActivity
                 break;
             case DriveMode:
                 break;
-            case UltraEnvPoint:
+            case RelEnvPoint:
                 handleMsg_EnvironmentPoint(message);
                 break;
-            case EnvEn:
+            case RelEnvEn:
                 break;
         }
     }
@@ -109,7 +109,7 @@ public class DisplayEnvironmentActivity extends PreferenceAdaptActivity
 
     private void handleMsg_EnvironmentPoint(Message message) {
         // 1 message stores 2 points (measured by 2 ultrasonic sensors)
-        final int pos1 = 2 * ((int)message.getCode().getCodeValue() - (int)Message.CODE.UltraEnvPoint.getCodeValue()),
+        final int pos1 = 2 * ((int)message.getCode().getCodeValue() - (int)Message.CODE.RelEnvPoint.getCodeValue()),
                 pos2 = pos1 + 1;
 
         final Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),

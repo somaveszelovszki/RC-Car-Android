@@ -27,12 +27,15 @@ public class AbsoluteEnvironmentView extends View {
     private Paint mPaint;
 
     private Bitmap mCar;
+
+    boolean mIsCarScaled = false;
+
     private int mCarX, mCarY;
     private float mCarRot = 0.0f;
 
     private static final int X = Config.ENV_ABS_AXIS_POINTS_NUM, Y = Config.ENV_ABS_AXIS_POINTS_NUM;
 
-    private byte[][] mEnvPoints = new byte[Y][X];
+    private int[][] mEnvPoints = new int[Y][X];
 
     public AbsoluteEnvironmentView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -41,16 +44,6 @@ public class AbsoluteEnvironmentView extends View {
         mPaint.setAntiAlias(true);
         mPaint.setColor(Color.GRAY);
         mPaint.setStyle(Paint.Style.FILL);
-
-        int w = getWidth(), h = getHeight();
-
-        Bitmap carRaw = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_car_top);
-        int ratio = max(w, h);
-        int dstSide = (int) (Config.CAR_LENGTH / (2 * Config.ULTRA_MAX_DIST) * ratio);
-        mCar = Bitmap.createScaledBitmap(carRaw, dstSide, dstSide, true);
-
-        mCarX = w / 2;
-        mCarY = h / 2;
     }
 
     // override onDraw
@@ -60,6 +53,18 @@ public class AbsoluteEnvironmentView extends View {
 
         int w = getWidth(), h = getHeight();
         int resolution = 8 / Config.ENV_ABS_POINTS_BIT_DEPTH;
+
+        if (!mIsCarScaled) {
+            Bitmap carRaw = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_car_top);
+            int ratio = max(w, h);
+            int dstSide = (int) (Config.CAR_LENGTH / (Config.ENV_ABS_AXIS_POINTS_NUM * Config.ENV_ABS_POINTS_DIST) * ratio);
+            mCar = Bitmap.createScaledBitmap(carRaw, dstSide, dstSide, true);
+
+            mCarX = w / 2;
+            mCarY = h / 2;
+
+            mIsCarScaled = true;
+        }
 
         for (int y = 0; y < X; ++y) {
             for (int x = 0; x < X; ++x) {
@@ -77,7 +82,7 @@ public class AbsoluteEnvironmentView extends View {
         canvas.rotate(0.0f);
     }
 
-    public void updatePoint(int x, int y, byte point){
+    public void updatePoint(int x, int y, int point){
         mEnvPoints[y][x] = point;
         invalidate();
     }

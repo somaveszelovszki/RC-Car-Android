@@ -91,9 +91,4 @@ public class GyroscopeControlFragment extends ControlFragment {
     public Boolean isCarEnvironmentEnabled() {
         return null; // TODO
     }
-
-    @Override
-    public void updateCarEnvironmentPoint(int idx, Pointf point) {
-        // TODO
-    }
 }

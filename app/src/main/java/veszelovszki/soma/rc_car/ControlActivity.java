@@ -23,9 +23,11 @@ import veszelovszki.soma.rc_car.fragment.DisplayEnvironmentFragment;
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
+import veszelovszki.soma.rc_car.utils.Config;
 import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
+import veszelovszki.soma.rc_car.view.SteeringWheelView;
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016. 11. 13.
@@ -44,7 +46,7 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     private Communicator mCommunicator;
 
-    private ControlFragment mControlFragment;
+    private SteeringWheelControlFragment mControlFragment;
     private DeviceListFragment mDeviceListFragment;
 
     private BluetoothDevice mDevice;
@@ -259,27 +261,60 @@ public class ControlActivity extends PreferenceAdaptActivity
                 break;
             case DriveMode:
                 break;
-            case UltraEnvPoint:
-                handleMsg_EnvironmentPoint(message);
+            case CarPos:
+                handleMsg_EnvironmentGridPoint(message);
                 break;
-            case EnvEn:
+            case CarAngle:
+                break;
+            case RelEnvPoint:
+                //handleMsg_EnvironmentPoint(message);
+                break;
+            case RelEnvEn:
                 break;
         }
     }
 
-    private void handleMsg_EnvironmentPoint(Message message) {
-        // 1 message stores 2 points (measured by 2 ultrasonic sensors)
-        final int pos1 = 2 * ((int)message.getCode().getCodeValue() - (int)Message.CODE.UltraEnvPoint.getCodeValue()),
-                pos2 = pos1 + 1;
+//    private void handleMsg_EnvironmentPoint(Message message) {
+//        // 1 message stores 2 points (measured by 2 ultrasonic sensors)
+//        final int pos1 = 2 * ((int)message.getCode().getCodeValue() - (int)Message.CODE.RelEnvPoint.getCodeValue()),
+//                pos2 = pos1 + 1;
+//
+//        final Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),
+//                p2 = Pointf.fromByteArray(message.getData().subArray(2, 2));
+//
+//        runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                mControlFragment.updateCarEnvironmentPoint(pos1, p1);
+//                mControlFragment.updateCarEnvironmentPoint(pos2, p2);
+//            }
+//        });
+//    }
 
-        final Pointf p1 = Pointf.fromByteArray(message.getData().subArray(0, 2)),
-                p2 = Pointf.fromByteArray(message.getData().subArray(2, 2));
+    private void handleMsg_EnvironmentGridPoint(Message message) {
+        // message stores X and Y coordinates of the
+        final int codeValue = message.getCode().getCodeValue() - Message.CODE.EnvGrid.getCodeValue();
+        final int data = message.getData().asInteger();
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mControlFragment.updateCarEnvironmentPoint(pos1, p1);
-                mControlFragment.updateCarEnvironmentPoint(pos2, p2);
+                int x = codeValue & 0b00110000, y = codeValue & 0b00001111;
+
+                int mask = 0;
+                for (int i = 0; i < Config.ENV_ABS_POINTS_BIT_DEPTH; ++i)
+                    mask |= (1 << i);
+
+                for (int i = 0; i < 32 / Config.ENV_ABS_POINTS_BIT_DEPTH; ++i) {
+                    int currentMask = mask << (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
+                    int point = (data & currentMask) >> (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
+
+                    mControlFragment.updateEnvironment_Point(x, y, point);
+
+                    x = (x + 1) % Config.ENV_ABS_AXIS_POINTS_NUM / 8;
+                    if (x == 0)
+                        y = (y + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
+                }
             }
         });
     }
@@ -299,7 +334,8 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     public void onCarEnvironmentEnabled() {
         if (mCommunicator.isConnected())
-            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvEn, true));
+            //mCommunicator.sendAndWaitACK(new Message(Message.CODE.RelEnvEn, true));
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvGridEn, true));
         else
             onError(new Exception("Communicator is not connected!"));
     }
@@ -307,7 +343,8 @@ public class ControlActivity extends PreferenceAdaptActivity
     @Override
     public void onCarEnvironmentDisabled() {
         if (mCommunicator.isConnected())
-            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvEn, false));
+            //mCommunicator.sendAndWaitACK(new Message(Message.CODE.RelEnvEn, false));
+            mCommunicator.sendAndWaitACK(new Message(Message.CODE.EnvGridEn, false));
         else
             onError(new Exception("Communicator is not connected!"));
     }
