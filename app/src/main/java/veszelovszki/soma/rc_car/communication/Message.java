@@ -1,6 +1,8 @@
 package veszelovszki.soma.rc_car.communication;
 
 
+import android.util.Log;
+
 import veszelovszki.soma.rc_car.utils.ByteArray;
 import veszelovszki.soma.rc_car.utils.Utils;
 
@@ -11,6 +13,8 @@ import veszelovszki.soma.rc_car.utils.Utils;
  */
 
 public class Message {
+
+    private static final String TAG = Message.class.getCanonicalName();
 
     public static final ByteArray BOOL_TRUE = ByteArray.fromInteger(1);
     public static final ByteArray BOOL_FALSE = ByteArray.fromInteger(0);
@@ -25,7 +29,7 @@ public class Message {
         RelEnvEn(       0b00000111,     BOOL_FALSE,         BOOL_TRUE                       ),  // enable/disable relative environment sending
         RelEnvPoint(    0b00001000,     Utils.INT8_MIN,     Utils.INT8_MAX,     0b11111000  ),  // group sensed points (index of the point-pair needs to be added to this number)
         EnvGridEn(      0b00000100,     BOOL_FALSE,         BOOL_TRUE                       ),  // enable/disable environment grid sending
-        EnvGrid(        0b01000000,                                             0b11000000  );  // group for environment grid points (container's X (2) and Y (4) coordinates need to be added to this number)
+        EnvGrid(        0b01000000,                                             0b11000000  );  // group for environment grid points (container's Y coordinate needs to be added to this number)
 
         private byte mCodeByte;
 
@@ -65,12 +69,20 @@ public class Message {
         }
 
         public static CODE apply(byte code) {
-            for (CODE codeObj : CODE.values())
-                if (codeObj.getCodeValue() == (code & codeObj.mMatchPattern))
+            for (CODE codeObj : CODE.values()) {
+                if (codeObj.getCodeValue() == (byte)(code & codeObj.mMatchPattern))
                     return codeObj;
-            throw new IllegalArgumentException("No CODE exists for '" + code + "'.");
+            }
+
+            throw new MessageCodeException("No CODE exists for '" + code + "'.");
         }
     };
+
+    public static class MessageCodeException extends IllegalArgumentException {
+        MessageCodeException(String s) {
+            super(s);
+        }
+    }
 
     public static final Message ACK = new Message(CODE.ACK_, 0);
 
@@ -128,6 +140,10 @@ public class Message {
 
     public CODE getCode() {
         return mCode;
+    }
+
+    public byte getCodeByte() {
+        return mCodeByte;
     }
 
     public ByteArray getData() {

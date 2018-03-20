@@ -142,16 +142,16 @@ public class ControlActivity extends PreferenceAdaptActivity
     public void onError(Throwable e) {
         super.onError(e);
 
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Snackbar.make(getContentView(), R.string.bluetooth_connection_setup_error, Snackbar.LENGTH_LONG).show();
-
-                getSupportFragmentManager().beginTransaction()
-                        .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
-                        .commit();
-            }
-        });
+//        runOnUiThread(new Runnable() {
+//            @Override
+//            public void run() {
+//                Snackbar.make(getContentView(), R.string.bluetooth_connection_setup_error, Snackbar.LENGTH_LONG).show();
+//
+//                getSupportFragmentManager().beginTransaction()
+//                        .replace(R.id.fragment_container, mDeviceListFragment, DeviceListFragment.TAG)
+//                        .commit();
+//            }
+//        });
     }
 
     private void startMessageSending() {
@@ -262,7 +262,6 @@ public class ControlActivity extends PreferenceAdaptActivity
             case DriveMode:
                 break;
             case CarPos:
-                handleMsg_EnvironmentGridPoint(message);
                 break;
             case CarAngle:
                 break;
@@ -270,6 +269,11 @@ public class ControlActivity extends PreferenceAdaptActivity
                 //handleMsg_EnvironmentPoint(message);
                 break;
             case RelEnvEn:
+                break;
+            case EnvGridEn:
+                break;
+            case EnvGrid:
+                handleMsg_EnvironmentGridPoint(message);
                 break;
         }
     }
@@ -291,17 +295,26 @@ public class ControlActivity extends PreferenceAdaptActivity
 //        });
 //    }
 
+    private int envGridX = 0, envGridPrevY = 0;
+
     private void handleMsg_EnvironmentGridPoint(Message message) {
         // message stores X and Y coordinates of the
-        final int codeValue = message.getCode().getCodeValue() - Message.CODE.EnvGrid.getCodeValue();
+        final int codeValue = message.getCodeByte() - Message.CODE.EnvGrid.getCodeValue();
         final int data = message.getData().asInteger();
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                int x = codeValue & 0b00110000, y = codeValue & 0b00001111;
+                int y = codeValue & 0b00111111;
+
+                if (y != envGridPrevY) {    // resynchronization (should not happen under normal circumstances)
+                    envGridPrevY = y;
+                    envGridX = 0;
+                }
 
                 int mask = 0;
+
+                // creates mask (e.g. 00000000000000000000000000000011)
                 for (int i = 0; i < Config.ENV_ABS_POINTS_BIT_DEPTH; ++i)
                     mask |= (1 << i);
 
@@ -309,11 +322,12 @@ public class ControlActivity extends PreferenceAdaptActivity
                     int currentMask = mask << (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
                     int point = (data & currentMask) >> (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
 
-                    mControlFragment.updateEnvironment_Point(x, y, point);
+                    mControlFragment.updateEnvironment_Point(envGridX, y, point);
 
-                    x = (x + 1) % Config.ENV_ABS_AXIS_POINTS_NUM / 8;
-                    if (x == 0)
-                        y = (y + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
+                    envGridX = (envGridX + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
+                    if (envGridX == 0) {
+                        y = envGridPrevY = (y + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
+                    }
                 }
             }
         });

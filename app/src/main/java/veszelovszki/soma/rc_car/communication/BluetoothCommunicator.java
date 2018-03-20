@@ -44,9 +44,9 @@ public class BluetoothCommunicator implements Communicator {
     private ConnectedThread mConnectedThread;
     private Context mContext;
 
-    private Handler mHandler = new Handler();
+    private Handler mSendAndWaitForAckHandler = new Handler();
     private Runnable mSendAndWaitForAck;
-    private Integer SEND_WAIT_FOR_ACK_PERIOD = 200;      // [ms]
+    private Integer SEND_WAIT_FOR_ACK_PERIOD = 500;      // [ms]
 
     private BluetoothDevice mDevice;
 
@@ -106,7 +106,7 @@ public class BluetoothCommunicator implements Communicator {
 
     @Override
     public void send(Message msg) {
-        Log.d(TAG, "Sent: " + msg.toString());
+        //Log.d(TAG, "Sent: " + msg.toString());
         mConnectedThread.write(msg.getBytes());
     }
 
@@ -115,10 +115,10 @@ public class BluetoothCommunicator implements Communicator {
         mSendAndWaitForAck = new Runnable() {
             public void run() {
                 send(msg);
-                mHandler.postDelayed(this, SEND_WAIT_FOR_ACK_PERIOD);
+                mSendAndWaitForAckHandler.postDelayed(this, SEND_WAIT_FOR_ACK_PERIOD);
             }
         };
-        mHandler.post(mSendAndWaitForAck);
+        mSendAndWaitForAckHandler.post(mSendAndWaitForAck);
     }
 
     private void onConnected() {
@@ -127,7 +127,8 @@ public class BluetoothCommunicator implements Communicator {
     }
 
     private void onError(Exception e) {
-        mIsConnected = false;
+        if (!(e instanceof Message.MessageCodeException))
+            mIsConnected = false;
         mListener.onCommunicationError(e);
     }
 
@@ -265,8 +266,10 @@ public class BluetoothCommunicator implements Communicator {
                                         // message received
                                         Message message = Message.fromBytes(mmRecvBuffer.getValue());
 
+                                        //Log.d(TAG, "Received: " + message.toString());
+
                                         if (message.getCode().equals(Message.CODE.ACK_))
-                                            mHandler.removeCallbacks(mSendAndWaitForAck);
+                                            mSendAndWaitForAckHandler.removeCallbacks(mSendAndWaitForAck);
 
                                         mListener.onNewMessage(message);
                                     }

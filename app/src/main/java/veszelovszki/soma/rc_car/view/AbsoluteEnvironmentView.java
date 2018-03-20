@@ -7,7 +7,9 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.Point;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.View;
 
 import veszelovszki.soma.rc_car.R;
@@ -42,7 +44,7 @@ public class AbsoluteEnvironmentView extends View {
 
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
-        mPaint.setColor(Color.GRAY);
+        mPaint.setColor(Color.BLACK);
         mPaint.setStyle(Paint.Style.FILL);
     }
 
@@ -66,13 +68,14 @@ public class AbsoluteEnvironmentView extends View {
             mIsCarScaled = true;
         }
 
-        for (int y = 0; y < X; ++y) {
+        for (int y = 0; y < Y; ++y) {
             for (int x = 0; x < X; ++x) {
-                mPaint.setAlpha(255 * mEnvPoints[y][x] / resolution);
-                float left = x / (float)X * w,
-                        bottom = y / (float)Y * h,
-                        right = left + h / Y,
-                        top = bottom + w / X;
+                mPaint.setAlpha((255 * mEnvPoints[y][x]) / resolution);
+
+                float left = (x / (float)X) * w,
+                        top = (y / (float)Y) * h,
+                        right = left + w / (float)X,
+                        bottom = top + h / (float)Y;
                 canvas.drawRect(left, top, right, bottom, mPaint);
             }
         }
@@ -82,9 +85,14 @@ public class AbsoluteEnvironmentView extends View {
         canvas.rotate(0.0f);
     }
 
+    int cntr = 0;
+
     public void updatePoint(int x, int y, int point){
+
         mEnvPoints[y][x] = point;
-        invalidate();
+
+        if (++cntr % 100 == 0)
+            invalidate();
     }
 
     public void updateCar(int x, int y, float angleDeg) {
