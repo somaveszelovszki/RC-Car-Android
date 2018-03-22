@@ -300,7 +300,7 @@ public class Utils {
     }
 
     public static int bytesToInt(byte[] bytes, int startIndex){
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getInt(startIndex);
+        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getInt(startIndex);
     }
 
     public static int bytesToInt(byte[] bytes){
@@ -308,11 +308,11 @@ public class Utils {
     }
 
     public static float bytesToFloat(byte[] bytes, int startIndex){
-        return ByteBuffer.wrap(bytes).order(ByteOrder.BIG_ENDIAN).getFloat(startIndex);
+        return ByteBuffer.wrap(bytes).order(ByteOrder.LITTLE_ENDIAN).getFloat(startIndex);
     }
 
     public static byte[] floatToBytes(float value) {
-        return ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putFloat(value).array();
+        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putFloat(value).array();
     }
 
     public static float bytesToFloat(byte[] bytes){
@@ -320,6 +320,6 @@ public class Utils {
     }
 
     public static byte[] intToBytes(int value){
-        return ByteBuffer.allocate(4).order(ByteOrder.BIG_ENDIAN).putInt(value).array();
+        return ByteBuffer.allocate(4).order(ByteOrder.LITTLE_ENDIAN).putInt(value).array();
     }
 }

@@ -177,6 +177,6 @@ public class Message {
 
     @Override
     public String toString() {
-        return String.valueOf((int)mCode.getCodeValue()) + ": " + mData.toString();
+        return String.valueOf((int)mCodeByte) + ": " + mData.toString();
     }
 }

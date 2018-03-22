@@ -106,7 +106,7 @@ public class BluetoothCommunicator implements Communicator {
 
     @Override
     public void send(Message msg) {
-        //Log.d(TAG, "Sent: " + msg.toString());
+        Log.d(TAG, "Sent: " + msg.toString());
         mConnectedThread.write(msg.getBytes());
     }
 
@@ -266,7 +266,7 @@ public class BluetoothCommunicator implements Communicator {
                                         // message received
                                         Message message = Message.fromBytes(mmRecvBuffer.getValue());
 
-                                        //Log.d(TAG, "Received: " + message.toString());
+                                        Log.d(TAG, "Received: " + message.toString());
 
                                         if (message.getCode().equals(Message.CODE.ACK_))
                                             mSendAndWaitForAckHandler.removeCallbacks(mSendAndWaitForAck);

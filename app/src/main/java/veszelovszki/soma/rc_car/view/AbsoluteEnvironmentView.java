@@ -6,17 +6,14 @@ import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Path;
-import android.graphics.Point;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.View;
 
 import veszelovszki.soma.rc_car.R;
 import veszelovszki.soma.rc_car.utils.Config;
-import veszelovszki.soma.rc_car.utils.Pointf;
 
-import static java.lang.Math.max;
+import static java.lang.Math.min;
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2017.10.25.
@@ -39,13 +36,27 @@ public class AbsoluteEnvironmentView extends View {
 
     private int[][] mEnvPoints = new int[Y][X];
 
+    float mResX, mResY;
+
     public AbsoluteEnvironmentView(Context context, AttributeSet attrs) {
         super(context, attrs);
+
+        for (int y = 0; y < Y; ++y) {
+            for (int x = 0; x < X; ++x) {
+                mEnvPoints[y][x] = 0;
+            }
+        }
 
         mPaint = new Paint();
         mPaint.setAntiAlias(true);
         mPaint.setColor(Color.BLACK);
         mPaint.setStyle(Paint.Style.FILL);
+    }
+
+    @Override
+    public void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int measureSpec = min(widthMeasureSpec, heightMeasureSpec);
+        super.onMeasure(measureSpec, measureSpec);
     }
 
     // override onDraw
@@ -54,28 +65,31 @@ public class AbsoluteEnvironmentView extends View {
         super.onDraw(canvas);
 
         int w = getWidth(), h = getHeight();
-        int resolution = 8 / Config.ENV_ABS_POINTS_BIT_DEPTH;
 
         if (!mIsCarScaled) {
             Bitmap carRaw = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_car_top);
-            int ratio = max(w, h);
+            int ratio = min(w, h);
             int dstSide = (int) (Config.CAR_LENGTH / (Config.ENV_ABS_AXIS_POINTS_NUM * Config.ENV_ABS_POINTS_DIST) * ratio);
             mCar = Bitmap.createScaledBitmap(carRaw, dstSide, dstSide, true);
 
-            mCarX = w / 2;
-            mCarY = h / 2;
+            mResX = w / (float)X;
+            mResY = h / (float)Y;
+
+            mCarX = Math.round(w / 2 - mResX / 2);
+            mCarY = Math.round(h / 2 - mResY / 2);
 
             mIsCarScaled = true;
         }
 
         for (int y = 0; y < Y; ++y) {
             for (int x = 0; x < X; ++x) {
-                mPaint.setAlpha((255 * mEnvPoints[y][x]) / resolution);
 
-                float left = (x / (float)X) * w,
-                        top = (y / (float)Y) * h,
-                        right = left + w / (float)X,
-                        bottom = top + h / (float)Y;
+                mPaint.setAlpha((255 * mEnvPoints[y][x]) / Config.ENV_ABS_POINTS_BIT_DEPTH);
+
+                float left = x * mResX,
+                        top = y * mResY,
+                        right = left + mResX,
+                        bottom = top + mResY;
                 canvas.drawRect(left, top, right, bottom, mPaint);
             }
         }
@@ -85,14 +99,9 @@ public class AbsoluteEnvironmentView extends View {
         canvas.rotate(0.0f);
     }
 
-    int cntr = 0;
-
     public void updatePoint(int x, int y, int point){
-
         mEnvPoints[y][x] = point;
-
-        if (++cntr % 100 == 0)
-            invalidate();
+        invalidate();
     }
 
     public void updateCar(int x, int y, float angleDeg) {

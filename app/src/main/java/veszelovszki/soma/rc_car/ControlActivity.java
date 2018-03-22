@@ -314,13 +314,13 @@ public class ControlActivity extends PreferenceAdaptActivity
 
                 int mask = 0;
 
-                // creates mask (e.g. 00000000000000000000000000000011)
+                // creates mask (e.g. 00000000000000000000000000000011 if point bit depth is 2)
                 for (int i = 0; i < Config.ENV_ABS_POINTS_BIT_DEPTH; ++i)
                     mask |= (1 << i);
 
                 for (int i = 0; i < 32 / Config.ENV_ABS_POINTS_BIT_DEPTH; ++i) {
                     int currentMask = mask << (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
-                    int point = (data & currentMask) >> (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
+                    int point = ((data & currentMask) >> (i * Config.ENV_ABS_POINTS_BIT_DEPTH)) & mask;
 
                     mControlFragment.updateEnvironment_Point(envGridX, y, point);
 

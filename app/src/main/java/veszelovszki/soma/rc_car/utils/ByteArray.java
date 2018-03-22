@@ -83,14 +83,18 @@ public class ByteArray {
         return index;
     }
 
+    private static String intToBinaryString(int value) {
+        return value != 0 ? Integer.toBinaryString(value) : "00000000000000000000000000000000";
+    }
+
     @Override
     public String toString(){
         StringBuilder builder = new StringBuilder("[ ");
         for (int i = 0; i < mValue.length - 1; ++i) {
-            builder.append(mValue[i]);
+            builder.append(intToBinaryString(mValue[i]));
             builder.append(", ");
         }
-        builder.append(mValue[mValue.length - 1]);
+        builder.append(intToBinaryString(mValue[mValue.length - 1]));
         builder.append(" ]");
         return builder.toString();
     }
