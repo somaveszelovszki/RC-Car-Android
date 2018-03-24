@@ -70,10 +70,11 @@ public class SteeringWheelView extends RelativeLayout {
         return true;
     }
 
+    // in [degree]
     public float getWheelRotation() {
         // changing signal so that LEFT is positive
         // returns angle in degrees
-        return mSteeringWheel.getRotation();
+        return -1 * mSteeringWheel.getRotation();
     }
 
     private void setWheelRotation(float rotation) {
@@ -105,7 +106,7 @@ public class SteeringWheelView extends RelativeLayout {
 
         switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                mInitialViewRotation = getWheelRotation();
+                mInitialViewRotation = mSteeringWheel.getRotation();
                 mInitialFingerRotation = (float) Math.toDegrees(Math.atan2(x - pivot.x, pivot.y - y));
 
                 mPrevFingerRotation = mInitialFingerRotation;
@@ -135,7 +136,7 @@ public class SteeringWheelView extends RelativeLayout {
                     rotation = (-1) * STEERING_WHEEL_MAX_ROTATION;
                 }
 
-                Float prevRotation = getWheelRotation();
+                Float prevRotation = mSteeringWheel.getRotation();
 
                 if (Math.abs(rotation - prevRotation) > STEERING_WHEEL_JUMP_LIMIT)
                     rotation = prevRotation;
@@ -146,7 +147,7 @@ public class SteeringWheelView extends RelativeLayout {
 
                 break;
             case MotionEvent.ACTION_UP:
-                animation = ObjectAnimator.ofFloat(mSteeringWheel, "rotation", getWheelRotation(), 0);
+                animation = ObjectAnimator.ofFloat(mSteeringWheel, "rotation", mSteeringWheel.getRotation(), 0);
                 animation.setDuration(ANIMATION_TIME);
                 animation.setRepeatCount(0);
                 animation.setInterpolator(new AccelerateDecelerateInterpolator());

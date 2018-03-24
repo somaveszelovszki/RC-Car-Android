@@ -20,16 +20,15 @@ public class Message {
     public static final ByteArray BOOL_FALSE = ByteArray.fromInteger(0);
 
     public enum CODE {
-        ACK_(           0b00000000                                                          ),  // for acknowledgements
-        Speed(          0b00000001,     -55.0f,             55.0f                           ),  // [cm/sec] (>0 means FORWARD)
-        SteeringAngle(  0b00000010,     -60.0f,             60.0f                           ),  // [degree] (>0 means LEFT)
-        DriveMode(      0b00000011                                                          ),  // values in Utils.DriveMode
-        CarPos(         0b00000101                                                          ),  // Absolute position of the car
-        CarAngle(       0b00000110,     0.0f,               2 * (float)Math.PI              ),  // Forward angle of the car (X axis is ZERO).
-        RelEnvEn(       0b00000111,     BOOL_FALSE,         BOOL_TRUE                       ),  // enable/disable relative environment sending
-        RelEnvPoint(    0b00001000,     Utils.INT8_MIN,     Utils.INT8_MAX,     0b11111000  ),  // group sensed points (index of the point-pair needs to be added to this number)
-        EnvGridEn(      0b00000100,     BOOL_FALSE,         BOOL_TRUE                       ),  // enable/disable environment grid sending
-        EnvGrid(        0b01000000,                                             0b11000000  );  // group for environment grid points (container's Y coordinate needs to be added to this number)
+        ACK_(           0b00000000                                                                              ),  // for acknowledgements
+        Speed(          0b00000001,     -55.0f,                         55.0f                                   ),  // [cm/sec] (>0 means FORWARD)
+        SteeringAngle(  0b00000010,     (float)Math.toRadians(-40),   (float)Math.toRadians(40)               ),  // [rad] (>0 means LEFT)
+        DriveMode(      0b00000011                                                                              ),  // values in Utils.DriveMode
+        Car(            0b00000101                                                                              ),  // Absolute position and forward angle of the car - forward angle is relative to the X axis
+        RelEnvEn(       0b00000111,     BOOL_FALSE,                     BOOL_TRUE                               ),  // enable/disable relative environment sending
+        RelEnvPoint(    0b00001000,     Utils.INT8_MIN,                 Utils.INT8_MAX,             0b11111000  ),  // group sensed points (index of the point-pair needs to be added to this number)
+        EnvGridEn(      0b00000100,     BOOL_FALSE,                     BOOL_TRUE                               ),  // enable/disable environment grid sending
+        EnvGrid(        0b01000000,                                                                 0b11000000  );  // group for environment grid points (container's Y coordinate needs to be added to this number)
 
         private byte mCodeByte;
 

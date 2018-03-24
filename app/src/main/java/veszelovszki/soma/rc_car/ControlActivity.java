@@ -4,14 +4,13 @@ import android.Manifest;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.util.Log;
-import android.view.View;
 
 import java.util.Set;
 
@@ -19,15 +18,12 @@ import veszelovszki.soma.rc_car.communication.Message;
 import veszelovszki.soma.rc_car.communication.Communicator;
 import veszelovszki.soma.rc_car.fragment.ControlFragment;
 import veszelovszki.soma.rc_car.fragment.DeviceListFragment;
-import veszelovszki.soma.rc_car.fragment.DisplayEnvironmentFragment;
 import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
 import veszelovszki.soma.rc_car.communication.BluetoothCommunicator;
-import veszelovszki.soma.rc_car.fragment.SteeringWheelControlFragment;
+import veszelovszki.soma.rc_car.utils.ByteArray;
 import veszelovszki.soma.rc_car.utils.Config;
-import veszelovszki.soma.rc_car.utils.Pointf;
 import veszelovszki.soma.rc_car.utils.PrefManager;
 import veszelovszki.soma.rc_car.utils.PreferenceAdaptActivity;
-import veszelovszki.soma.rc_car.view.SteeringWheelView;
 
 /**
  * Created by Soma Veszelovszki {soma.veszelovszki@gmail.com} on 2016. 11. 13.
@@ -54,6 +50,8 @@ public class ControlActivity extends PreferenceAdaptActivity
     private PrefManager mPrefManager;
 
     private static final int PERMISSION_REQUEST_BLUETOOTH = 1;
+
+    private Point gridPoint = new Point(0, 0);
 
     /**
      * Initializes message send handler. Sends drive messages periodically with the Communicator.
@@ -261,9 +259,8 @@ public class ControlActivity extends PreferenceAdaptActivity
                 break;
             case DriveMode:
                 break;
-            case CarPos:
-                break;
-            case CarAngle:
+            case Car:
+                handleMsg_Car(message);
                 break;
             case RelEnvPoint:
                 //handleMsg_EnvironmentPoint(message);
@@ -295,7 +292,18 @@ public class ControlActivity extends PreferenceAdaptActivity
 //        });
 //    }
 
-    private int envGridX = 0, envGridPrevY = 0;
+    private void handleMsg_Car(Message message) {
+        ByteArray data = message.getData();
+        final Point gridPoint = new Point(data.get(0), data.get(1));
+        final float angleDeg = -1 * ((360.0f * ((data.get(2) & 0x000000ff) | ((data.get(3) << 8) & 0x0000ff00)) / 65535) - 90.0f);
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                mControlFragment.updateEnvironment_Car(gridPoint, angleDeg);
+            }
+        });
+    }
 
     private void handleMsg_EnvironmentGridPoint(Message message) {
         // message stores X and Y coordinates of the
@@ -307,9 +315,9 @@ public class ControlActivity extends PreferenceAdaptActivity
             public void run() {
                 int y = codeValue & 0b00111111;
 
-                if (y != envGridPrevY) {    // resynchronization (should not happen under normal circumstances)
-                    envGridPrevY = y;
-                    envGridX = 0;
+                if (y != gridPoint.y) {    // resynchronization (should not happen under normal circumstances)
+                    gridPoint.y = y;
+                    gridPoint.x = 0;
                 }
 
                 int mask = 0;
@@ -322,11 +330,11 @@ public class ControlActivity extends PreferenceAdaptActivity
                     int currentMask = mask << (i * Config.ENV_ABS_POINTS_BIT_DEPTH);
                     int point = ((data & currentMask) >> (i * Config.ENV_ABS_POINTS_BIT_DEPTH)) & mask;
 
-                    mControlFragment.updateEnvironment_Point(envGridX, y, point);
+                    mControlFragment.updateEnvironment_Point(gridPoint, point);
 
-                    envGridX = (envGridX + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
-                    if (envGridX == 0) {
-                        y = envGridPrevY = (y + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
+                    gridPoint.x = (gridPoint.x + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
+                    if (gridPoint.x == 0) {
+                        y = gridPoint.y = (y + 1) % Config.ENV_ABS_AXIS_POINTS_NUM;
                     }
                 }
             }

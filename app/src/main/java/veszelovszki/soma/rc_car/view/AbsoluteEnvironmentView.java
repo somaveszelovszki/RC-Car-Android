@@ -5,6 +5,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -29,8 +30,9 @@ public class AbsoluteEnvironmentView extends View {
 
     boolean mIsCarScaled = false;
 
-    private int mCarX, mCarY;
-    private float mCarRot = 0.0f;
+    private float mCarAngleDeg;
+    int mCarSize;
+    Matrix mCarRotator;
 
     private static final int X = Config.ENV_ABS_AXIS_POINTS_NUM, Y = Config.ENV_ABS_AXIS_POINTS_NUM;
 
@@ -69,14 +71,15 @@ public class AbsoluteEnvironmentView extends View {
         if (!mIsCarScaled) {
             Bitmap carRaw = BitmapFactory.decodeResource(getContext().getResources(), R.drawable.ic_car_top);
             int ratio = min(w, h);
-            int dstSide = (int) (Config.CAR_LENGTH / (Config.ENV_ABS_AXIS_POINTS_NUM * Config.ENV_ABS_POINTS_DIST) * ratio);
-            mCar = Bitmap.createScaledBitmap(carRaw, dstSide, dstSide, true);
+            mCarSize = (int) (Config.CAR_LENGTH / (Config.ENV_ABS_AXIS_POINTS_NUM * Config.ENV_ABS_POINTS_DIST) * ratio);
+            mCar = Bitmap.createScaledBitmap(carRaw, mCarSize, mCarSize, true);
 
             mResX = w / (float)X;
             mResY = h / (float)Y;
 
-            mCarX = Math.round(w / 2 - mResX / 2);
-            mCarY = Math.round(h / 2 - mResY / 2);
+            mCarAngleDeg = 0.0f;
+            mCarRotator = new Matrix();
+            mCarRotator.postTranslate((w - mCarSize) / 2, (h - mCarSize) / 2);
 
             mIsCarScaled = true;
         }
@@ -94,8 +97,7 @@ public class AbsoluteEnvironmentView extends View {
             }
         }
 
-        canvas.rotate(mCarRot);
-        canvas.drawBitmap(mCar, mCarX, mCarY, null);
+        canvas.drawBitmap(mCar, mCarRotator, null);
         canvas.rotate(0.0f);
     }
 
@@ -105,8 +107,12 @@ public class AbsoluteEnvironmentView extends View {
     }
 
     public void updateCar(int x, int y, float angleDeg) {
-        mCarX = x;
-        mCarY = y;
-        mCarRot = angleDeg;
+        float carX = x * mResX - mCarSize / 2;
+        float carY = y * mResY - mCarSize / 2;
+        mCarAngleDeg = angleDeg;
+
+        mCarRotator = new Matrix();
+        mCarRotator.postRotate(mCarAngleDeg);
+        mCarRotator.postTranslate(carX, carY);
     }
 }

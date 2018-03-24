@@ -67,6 +67,7 @@ public class SteeringWheelControlFragment extends ControlFragment {
                 (float) Message.CODE.Speed.getMinDataValue(), (float) Message.CODE.Speed.getMaxDataValue());
     }
 
+    // in [rad]
     @Override
     public float getSteeringAngle() {
         return Utils.map(mSteeringWheelView.getWheelRotation(),
@@ -92,12 +93,12 @@ public class SteeringWheelControlFragment extends ControlFragment {
 //        mRelativeEnvironmentView.updatePoint(idx, point);
 //    }
 
-    public void updateEnvironment_Point(int x, int y, int point){
-        mAbsoluteEnvironmentView.updatePoint(x, y, point);
+    public void updateEnvironment_Point(Point gridPoint, int point){
+        mAbsoluteEnvironmentView.updatePoint(gridPoint.x, gridPoint.y, point);
     }
 
-    public void updateEnvironment_Car(int x, int y, float angleDeg) {
-        mAbsoluteEnvironmentView.updateCar(x, y, angleDeg);
+    public void updateEnvironment_Car(Point gridPoint, float angleDeg) {
+        mAbsoluteEnvironmentView.updateCar(gridPoint.x, gridPoint.y, angleDeg);
     }
 }
 
