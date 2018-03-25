@@ -106,10 +106,16 @@ public class AbsoluteEnvironmentView extends View {
         invalidate();
     }
 
+    /**
+     *
+     * @param x In car grid units! (grid resolution * ENV_CAR_GRID_DIST_RATE)
+     * @param y In car grid units! (grid resolution * ENV_CAR_GRID_DIST_RATE)
+     * @param angleDeg forward - in [degree]
+     */
     public void updateCar(int x, int y, float angleDeg) {
-        float carX = x * mResX - mCarSize / 2;
-        float carY = y * mResY - mCarSize / 2;
-        mCarAngleDeg = angleDeg;
+        float carX = x * mResX / Config.ENV_CAR_GRID_DIST_RATE - mCarSize / 2;
+        float carY = y * mResY / Config.ENV_CAR_GRID_DIST_RATE - mCarSize / 2;
+        mCarAngleDeg = -1 * (angleDeg - 90.0f); // converts so that it can be used to rotate Views
 
         mCarRotator = new Matrix();
         mCarRotator.postRotate(mCarAngleDeg);

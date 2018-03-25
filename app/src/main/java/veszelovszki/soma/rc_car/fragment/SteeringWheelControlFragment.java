@@ -97,8 +97,13 @@ public class SteeringWheelControlFragment extends ControlFragment {
         mAbsoluteEnvironmentView.updatePoint(gridPoint.x, gridPoint.y, point);
     }
 
-    public void updateEnvironment_Car(Point gridPoint, float angleDeg) {
-        mAbsoluteEnvironmentView.updateCar(gridPoint.x, gridPoint.y, angleDeg);
+    /**
+     * Updates car in the absolute environment view.
+     * @param carGridPoint In car grid units! (grid resolution * ENV_CAR_GRID_DIST_RATE)
+     * @param angleDeg forward angle - in [degree]
+     */
+    public void updateEnvironment_Car(Point carGridPoint, float angleDeg) {
+        mAbsoluteEnvironmentView.updateCar(carGridPoint.x, carGridPoint.y, angleDeg);
     }
 }
 

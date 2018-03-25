@@ -294,13 +294,13 @@ public class ControlActivity extends PreferenceAdaptActivity
 
     private void handleMsg_Car(Message message) {
         ByteArray data = message.getData();
-        final Point gridPoint = new Point(data.get(0), data.get(1));
-        final float angleDeg = -1 * ((360.0f * ((data.get(2) & 0x000000ff) | ((data.get(3) << 8) & 0x0000ff00)) / 65535) - 90.0f);
+        final Point carGridPoint = new Point(((int)data.get(0) + 256) % 256, (data.get(1) + 256) % 256);
+        final float angleDeg = 360.0f * ((data.get(2) & 0x000000ff) | ((data.get(3) << 8) & 0x0000ff00)) / 65535;
 
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                mControlFragment.updateEnvironment_Car(gridPoint, angleDeg);
+                mControlFragment.updateEnvironment_Car(carGridPoint, angleDeg);
             }
         });
     }

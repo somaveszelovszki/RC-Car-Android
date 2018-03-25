@@ -13,5 +13,6 @@ public class Config {
     public static final Integer ENV_ABS_POINTS_DIST = (int)(CAR_WIDTH / 2);
     public static final Integer ENV_ABS_AXIS_POINTS_NUM = 64;
     public static final Integer ENV_ABS_POINTS_BIT_DEPTH = 1;
+    public static final Integer ENV_CAR_GRID_DIST_RATE = 4;
 
 }
